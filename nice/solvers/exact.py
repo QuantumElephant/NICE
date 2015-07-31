@@ -32,46 +32,12 @@ class ExactEqmSolver(object):
             constant is expressed in terms of concentrations.
         '''
         
-        # Checks for/ converts to the right input types.        
-
-        if isinstance(initial_concentrations, list):
-            self.initial_concentrations = initial_concentrations
-        else:
-            raise ValueError, 'Please ensure the intial concentrations are a list.'
-
-        if isinstance(keq_values, list):
-            self.keq_values = keq_values
-        else:
-            raise ValueError, 'Please ensure that your equillibrium constants are a list.'
+        self.initial_concentrations = initial_concentrations
+        self.keq_values = keq_values
+        self.stoich_coeff = stoich_coeff
+        self.initial_guess = initial_guess
+        self.keq_mol_frac = keq_mol_frac
         
-        if isinstance(stoich_coeff, np.ndarray):
-            self.stoich_coeff = stoich_coeff
-        elif isinstance(stoich_coeff, list):
-            try:
-                self.stoich_coeff = np.array(stoich_coeff)
-            except:
-                raise ValueError, 'Please check your coefficient matrix- could not convert to an array.'
-        else:
-            raise ValueError, 'Please ensure that the coefficient matrix is in the correct format.'
-
-        if isinstance(initial_guess, list):
-            self.initial_guess = initial_guess
-        else:
-            raise ValueError, 'Please ensure that your initial guess values are in a list.'
-        
-        if isinstance(keq_mol_frac, bool):
-            self.keq_mol_frac = keq_mol_frac
-        else:
-            raise ValueError, 'The format of the equillibrium constants (keq_mol_frac) must be a boolean value.'
-
-        # Check that the dimensions of the coefficient array match with the number of keq values/ species.
-
-        if self.stoich_coeff.shape[0] != len(self.keq_values):
-            raise ValueError, 'The number of rows in the coefficient matrix must equal the number of Keq values given.'
-        elif self.stoich_coeff.shape[1] != len(self.initial_concentrations):
-            raise ValueError, 'The number of columns in the coefficient matrix must equal the number of intial concentrations given.'
- 
-
         self.nspecies = len(self.initial_concentrations)
         self.nreactions = len(self.keq_values)
 
@@ -140,8 +106,7 @@ class ExactEqmSolver(object):
         '''
         
         keq_exps = []
-        for x in range(self.nreactions): # Change to make this loop more pythonic
-            x_coeff = self.stoich_coeff[x,:]
+        for x, x_coeff in enumerate(self.stoich_coeff):
             keq_nocoeff = 1
             for (i,v) in zip(self.mol_fractions, np.nditer(x_coeff, order = 'K')):
                 term = i**v
@@ -169,8 +134,7 @@ class ExactEqmSolver(object):
         '''
     
         keq_exps = []
-        for x in range(self.nreactions): # Change to make this loop more pythonic
-            x_coeff = self.stoich_coeff[x,:]
+        for x, x_coeff in enumerate(self.stoich_coeff):
             keq_nocoeff = 1
             for (i,v) in zip(self.mol_exps, np.nditer(x_coeff, order = 'K')):
                 term = i**v
@@ -249,16 +213,16 @@ class ExactEqmSolver(object):
         return final_concentrations    
     
 
-    def solve_final_concentrations(self):
+    def solve_final_concentrations(self, keq_mol_frac = False):
         '''
         Runs the class using a single method.
         '''
         
         self.setup_mol_molar_expressions()
         self.get_molfractions()
-        if self.keq_mol_frac == True:
+        if keq_mol_frac == True:
             self.setup_keq_exps_molfrac()
-        elif self.keq_mol_frac == False:
+        elif keq_mol_frac == False:
             self.setup_keq_exps_conc()
         self.get_zeta_values()
         self.get_final_concentrations()

@@ -16,7 +16,7 @@ class BridgeSolvers(object):
     different solvers.
     '''
 
-    def __init__(initial_concentrations, final_concentrations, stoich_coeff):
+    def __init__(self, initial_concentrations, final_concentrations, stoich_coeff):
         '''
         Arguments:
         ----------
@@ -70,7 +70,7 @@ class BridgeSolvers(object):
         for initial, final in zip(self.initial_concentrations, self.final_concentrations):
             coeff_vector.append(final-initial)
 
-        zeta_guess = np.linalg.lstsq(np.transpose(stoich_coeff), coeff_vector)[0]
+        zeta_guess = np.linalg.lstsq(np.transpose(self.stoich_coeff), coeff_vector)[0]
 
         return zeta_guess
 

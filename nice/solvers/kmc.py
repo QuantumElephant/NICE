@@ -36,49 +36,14 @@ class KMCSolver(object):
             will take a long time to converge to a solution. Typically 10e-6 orders of magnitude lower 
             than your highest concentration, and at least 10e-3 to 10e-5 less than your lowest concentration.
 	'''
-        # TODO remove these checks (redundant, already in the run script)
-        # Checks for/ converts to the right input types.        
-       
-        if isinstance(initial_concentrations, list):
-            self.initial_concentrations = initial_concentrations
-            self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
-        else:
-            raise ValueError, 'Please ensure that the initial concentrations list is in the correct format.'
 
-        if isinstance(keq_values, list):
-            self.keq_values = keq_values
-        else:
-            raise ValueError, 'Please ensure your equillibrium constant list is in the correct format.'
-
-        if isinstance(stoich_coeff, np.ndarray):
-            self.stoich_coeff = stoich_coeff
-        elif isinstance(stoich_coeff, list):
-            try:
-                stoich_coeff = np.array(stoich_coeff)
-                self.stoich_coeff = stoich_coeff
-            except:
-                raise ValueError, 'Please check your coefficient matrix- could not convert to an array.'
-        else:
-            raise ValueError, 'Please ensure that the coefficient matrix is in the correct format.'
-        
-        if isinstance(phi, int):
-            self.phi = phi
-        else:
-            raise ValueError, 'The inputted phi value must be an integer.'
-
-        if isinstance(concentration_step, float):
-            self.concentration_step = concentration_step
-        elif isinstance(concentration_step, int):
-            warnings.warn('The concentration_step value should typically be a small float number. Please ensure you have read the documentation before proceeding.') 
-        else:
-            raise ValueError, 'Please ensure that the concentration_step value is either a float or integer number.'
-
-        # Check that the dimensions of the coefficient array match with the number of keq values/ species.
-
-        if stoich_coeff.shape[0] != len(self.keq_values):
-            raise ValueError, 'The number of rows in the coefficient matrix must equal the number of Keq values given.'
-        elif self.stoich_coeff.shape[1] != len(self.initial_concentrations):
-            raise ValueError, 'The number of columns in the coefficient matrix must equal the number of intial concentrations given.'
+        self.initial_concentrations = initial_concentrations
+        self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
+        self.keq_values = keq_values
+        self.stoich_coeff = stoich_coeff
+        print stoich_coeff
+        self.phi = phi
+        self.concentration_step = concentration_step
         
 
     def get_rate_constants(self):
@@ -130,6 +95,7 @@ class KMCSolver(object):
 
         
         for r, row in enumerate(self.stoich_coeff):
+            print row
             forward_rate = self.forward_rate_consts[r]
             reverse_rate = self.reverse_rate_consts[r]
             # This can be done in a much more natural way, given that the coeffs are signed.
@@ -296,6 +262,7 @@ class KMCSolver(object):
         '''
      
         for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
+            print coeff
             if self.net_rates[self.selected_rxn] >= 0:
                 self.concentrations[species] = self.concentrations[species] + coeff*self.concentration_step
             elif self.net_rates[self.selected_rxn] < 0:
