@@ -6,7 +6,7 @@ import numpy as np
 from scipy.optimize import fsolve
 
 class ExactEqmSolver(object):
-    ''' Solves for final mol fractions, or concentrations through non-linear equations '''
+    '''Solves for final concentrations by solving a system of nonlinear equations'''
 
     def __init__(self, initial_concentrations, keq_values, stoich_coeff, initial_guess = None):
         '''
@@ -26,9 +26,6 @@ class ExactEqmSolver(object):
             coefficient will be zero in that case.
         initial_guess: list
             Guess for the zeta values of each reaction, but *not* the initial concentrations.
-        keq_mol_frac: bool
-            When True, the equillibrium constant is expressed in terms of mol fractions. When false, the equillibrium 
-            constant is expressed in terms of concentrations.
         '''
         
         self.initial_concentrations = initial_concentrations
@@ -36,12 +33,29 @@ class ExactEqmSolver(object):
         self.stoich_coeff = stoich_coeff
         self.initial_guess = initial_guess
         
-        self.nspecies = len(self.initial_concentrations)
-        self.nreactions = len(self.keq_values)
-
 
     def setup_keq_expressions(self, z, **kwargs):
+        '''
+        Creates the correct keq expressions in terms of the final concentrations for each species.
+
+        Arguments:
+        ----------
+        z: list
+            Each element represents a different zeta value.
+        kwargs: dict
+            Used to alter the return value of the function (to get the mol_exps back instead of keq_exps).
+            The only acceptable keyword currently is 'return_value' and the corresponding value is 'mol_exp'.
+            If no kwargs are specified, the function returns keq_exps by default.
         
+        Returns:
+        --------
+        mol_exps: list
+            Expressions for the final concentrations of each species in terms of the zeta for each reaction
+            the species participates in.
+        keq_exps: list
+            Expressions for keq in terms of the final concentrations (using zeta).
+        '''
+               
         mol_exps = []
         for species, concentration in enumerate(self.initial_concentrations):
             mol_exp = concentration
@@ -78,7 +92,7 @@ class ExactEqmSolver(object):
         '''
 
         if self.initial_guess == None:
-            self.initial_guess = [0]*self.nreactions # All zeros is usually a stationary point- guess strongly reccomended!
+            self.initial_guess = [0]*len(self.keq_values) # All zeros is usually a stationary point- guess strongly reccomended!
         zeta_values = fsolve(self.setup_keq_expressions, self.initial_guess)
         print "The calculated extents of reaction are %s" %(zeta_values)
        
@@ -87,7 +101,7 @@ class ExactEqmSolver(object):
     
     def solve_final_concentrations(self):
         '''
-        Runs the class using a single method.
+        Runs the class.
         '''
 
         zeta_values = self.get_zeta_values()
