@@ -42,134 +42,29 @@ class ExactEqmSolver(object):
         self.nreactions = len(self.keq_values)
 
 
-    def setup_mol_molar_expressions(self):
-        '''
-        Creates expressions for the final number of moles or molars for each species.
-
-        Note that if the equillibrium constant is in concentrations, the zeta values (extents
-        of reaction) are in units of molar. If the equillibrium constant is in terms of mol fractions,
-        the zeta values are in units of mol.
-
-        Returns:
-        --------
-        mol_exps: list
-            Contains an equation expressing the final number of moles/ molars for each species using initial
-            concentrations, and the number of moles/ molars created/ consumed in each reaction. Equations are
-            created using sympy.
-        '''
-       
+    def setup_keq_expressions(self, z):
+        
         mol_exps = []
-        zeta_vars = sympy.symbols('z0:' + str(self.nreactions))
-        for x in range(self.nspecies):
-            initial = self.initial_concentrations
-            x_coeff = self.stoich_coeff[:,x]
-            mol_expression = initial[x]
-            for i, element in enumerate(np.nditer(x_coeff, order = 'K')):
-                mol_expression = mol_expression + zeta_vars[i]*element
-            mol_exps.append(mol_expression)
-        
-        self.zeta_vars = zeta_vars
-        self.mol_exps = mol_exps
-        return mol_exps
-
-    def get_molfractions(self):
-        '''
-        Creates mol fraction expressions using the expressions for final moles in terms of zeta.
-
-        Returns:
-        --------
-        mol_fractions: list
-            Expresses the concentration of each species in terms of mol fractions. 
-            Expressions are created/ manipulated using sympy symbols.
-        '''
-
-        mol_fractions = []
-        for x in range(self.nspecies):
-            mol_fraction = self.mol_exps[x]/sum(self.mol_exps)
-            mol_fractions.append(mol_fraction)
-
-        self.mol_fractions = mol_fractions
-        return mol_fractions
-    
-    # Change into one function
-    def setup_keq_exps_molfrac(self):
-        '''
-        Uses the mol fraction expressions to create keq expressions for each reaction.
-
-        If keq is expressed in mol fractions, the mol fraction equations will be used to construct
-        the expressions for keq. If keq is expressed in concentrations, then the expressions for 
-        each species in terms of concentration will be used.
-
-        Returns:
-        --------
-        keq_exps: list
-            Equillibrium constant expressions for each reaction, expressed in terms of mol fractions.
-        '''
+        for species, concentration in enumerate(self.initial_concentrations):
+            mol_exp = concentration
+            for i, coeff in enumerate(np.nditer(self.stoich_coeff[:,species])):
+                mol_exp = mol_exp + coeff*z[i]
+            mol_exps.append(mol_exp)
         
         keq_exps = []
-        for x, x_coeff in enumerate(self.stoich_coeff):
-            keq_nocoeff = 1
-            for (i,v) in zip(self.mol_fractions, np.nditer(x_coeff, order = 'K')):
-                term = i**v
-                keq_nocoeff = keq_nocoeff*term
-            keq_coeff = keq_nocoeff - self.keq_values[x]
-            keq_exps.append(keq_coeff)
-                
-        print keq_exps    
-        self.keq_exps = keq_exps
+        for rxn, keq in enumerate(self.keq_values):
+            keq_exp = 1
+            for expr, coeff in zip(mol_exps, np.nditer(self.stoich_coeff[rxn,:])):
+                term = expr**coeff
+                keq_exp = keq_exp*term
+            keq_exp = keq_exp - self.keq_values[rxn]
+            keq_exps.append(keq_exp)
+
         return keq_exps
-
     
-    def setup_keq_exps_conc(self): 
-        '''
-        Uses the concentration expressions to create keq expressions for each reaction.
-
-        If keq is expressed in mol fractions, the mol fraction equations will be used to construct
-        the expressions for keq. If keq is expressed in concentrations, then the expressions for 
-        each species in terms of concentration will be used.
-
-        Returns:
-        --------
-        keq_exps: list
-            Equillibrium constant expressions for each reaction, expressed in terms of concentrations.
-        '''
-    
-        keq_exps = []
-        for x, x_coeff in enumerate(self.stoich_coeff):
-            keq_nocoeff = 1
-            for (i,v) in zip(self.mol_exps, np.nditer(x_coeff, order = 'K')):
-                term = i**v
-                keq_nocoeff = keq_nocoeff*term
-            keq_coeff = keq_nocoeff - self.keq_values[x]
-            keq_exps.append(keq_coeff)
-
-        self.keq_exps = keq_exps
-        return keq_exps
-
-    def convert_scipy_func(self, z):
-        '''
-        Returns the expressions created using sympy into the correct input format for scipy.optimize solvers.
-
-        Arguments:
-        ----------
-        z: list
-            Each entry represents a different variable z0, z1, z2, etc. Needed to use scipy fsolve (fsolve passes
-            values for z).
-
-        Returns:
-        --------
-        functions: list
-            Expressions converted from sympy expressions into a form that scipy will be able to use.
-        '''
-
-        functions_sympy = map(str, self.keq_exps)
-        functions = []
-        for i, func in enumerate(functions_sympy):
-            for x in range(len(self.zeta_vars)):
-                functions_sympy[i] = functions_sympy[i].replace('z' + str(x), 'z' + '[' + str(x) + ']')
-            functions.append(eval(functions_sympy[i])) # Try to think of a better way to do this than using eval!
-        
-        return functions
+    def debug_sympy(self):
+        keq_exps = self.setup_keq_expressions(z = sympy.symbols('z1, z2'))
+        print keq_exps 
 
     # Use the exact jacobian
     def get_zeta_values(self):
@@ -184,7 +79,7 @@ class ExactEqmSolver(object):
 
         if self.initial_guess == None:
             self.initial_guess = [0]*self.nreactions # All zeros is usually a stationary point- guess strongly reccomended!
-        zeta_values = fsolve(self.convert_scipy_func, self.initial_guess)
+        zeta_values = fsolve(self.setup_keq_expressions, self.initial_guess)
         print "The calculated extents of reaction are %s" %(zeta_values)
        
         self.zeta_values = zeta_values
@@ -201,30 +96,17 @@ class ExactEqmSolver(object):
             The final concentration for each species in the reaction network.
         '''
 
-        zeta_vars_values = {}
-        for var, value in zip(self.zeta_vars, self.zeta_values):
-            zeta_vars_values[var] = value 
-        
-        final_concentrations = []    
-        for equation in self.mol_exps:
-            final_concentration = equation.evalf(subs = zeta_vars_values)
-            final_concentrations.append(final_concentration)
-       
+        final_concentrations = self.setup_keq_expressions(z = self.zeta_values)            
+
         self.final_concentrations = final_concentrations
         return final_concentrations    
     
 
-    def solve_final_concentrations(self, keq_mol_frac = False):
+    def solve_final_concentrations(self):
         '''
         Runs the class using a single method.
         '''
-        
-        self.setup_mol_molar_expressions()
-        self.get_molfractions()
-        if keq_mol_frac == True:
-            self.setup_keq_exps_molfrac()
-        elif keq_mol_frac == False:
-            self.setup_keq_exps_conc()
+        self.debug_sympy()
         self.get_zeta_values()
         self.get_final_concentrations()
 
