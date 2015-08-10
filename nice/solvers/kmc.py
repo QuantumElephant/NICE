@@ -36,7 +36,7 @@ class KMCSolver(object):
             will take a long time to converge to a solution. Typically 10e-6 orders of magnitude lower 
             than your highest concentration, and at least 10e-3 to 10e-5 less than your lowest concentration.
 	'''
-
+        # Rewrite the type checks
         self.initial_concentrations = initial_concentrations
         self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
         self.keq_values = keq_values
@@ -44,7 +44,7 @@ class KMCSolver(object):
         print stoich_coeff
         self.phi = phi
         self.concentration_step = concentration_step
-        
+        # Initialize attributes here!
 
     def get_rate_constants(self):
 	'''
@@ -132,7 +132,7 @@ class KMCSolver(object):
             The forward rate - reverse rate for each reaction. A negative value means that the reverse
             reaction occurs, and a positive value represents a forward reaction.
         '''
-
+        # Arrays can be subtracted
         net_rates = []
         for forward_rate, reverse_rate in zip(self.forward_rates, self.reverse_rates):
             net_rates.append(forward_rate - reverse_rate)
@@ -195,7 +195,7 @@ class KMCSolver(object):
         print 'Prob vector sum: %s' %(sum(probability_vector))
         return probability_vector
 
-
+    # Move this into anoter function
     def select_random_value(self):
         '''
         Generates a random number between 0 and 1, used to determine which reaction occurs.
@@ -271,7 +271,7 @@ class KMCSolver(object):
         if verbosity == 'on':
             print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
 	
-
+    # MOve as musch as possible to init
     def run_simulation(self, maxiter, net_rate_KMC = False):
         '''
         Runs the calculation.

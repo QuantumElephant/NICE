@@ -90,7 +90,8 @@ class ExactEqmSolver(object):
 
         self.mol_fractions = mol_fractions
         return mol_fractions
-
+    
+    # Change into one function
     def setup_keq_exps_molfrac(self):
         '''
         Uses the mol fraction expressions to create keq expressions for each reaction.
@@ -170,7 +171,7 @@ class ExactEqmSolver(object):
         
         return functions
 
-
+    # Use the exact jacobian
     def get_zeta_values(self):
         '''
         Determines the extents of reactions (zeta values) by solving a system of nonlinear equations.
