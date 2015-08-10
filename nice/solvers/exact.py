@@ -3,13 +3,12 @@
 from __future__ import division
 
 import numpy as np
-import sympy
 from scipy.optimize import fsolve
 
 class ExactEqmSolver(object):
     ''' Solves for final mol fractions, or concentrations through non-linear equations '''
 
-    def __init__(self, initial_concentrations, keq_values, stoich_coeff, initial_guess = None, keq_mol_frac = False):
+    def __init__(self, initial_concentrations, keq_values, stoich_coeff, initial_guess = None):
         '''
         Arguments:
         ----------
@@ -36,13 +35,12 @@ class ExactEqmSolver(object):
         self.keq_values = keq_values
         self.stoich_coeff = stoich_coeff
         self.initial_guess = initial_guess
-        self.keq_mol_frac = keq_mol_frac
         
         self.nspecies = len(self.initial_concentrations)
         self.nreactions = len(self.keq_values)
 
 
-    def setup_keq_expressions(self, z):
+    def setup_keq_expressions(self, z, **kwargs):
         
         mol_exps = []
         for species, concentration in enumerate(self.initial_concentrations):
@@ -51,6 +49,7 @@ class ExactEqmSolver(object):
                 mol_exp = mol_exp + coeff*z[i]
             mol_exps.append(mol_exp)
         
+
         keq_exps = []
         for rxn, keq in enumerate(self.keq_values):
             keq_exp = 1
@@ -60,11 +59,12 @@ class ExactEqmSolver(object):
             keq_exp = keq_exp - self.keq_values[rxn]
             keq_exps.append(keq_exp)
 
+        if 'return_value' in kwargs:
+            if kwargs['return_value'] == 'mol_exps':
+                return mol_exps        
+    
         return keq_exps
     
-    def debug_sympy(self):
-        keq_exps = self.setup_keq_expressions(z = sympy.symbols('z1, z2'))
-        print keq_exps 
 
     # Use the exact jacobian
     def get_zeta_values(self):
@@ -82,33 +82,16 @@ class ExactEqmSolver(object):
         zeta_values = fsolve(self.setup_keq_expressions, self.initial_guess)
         print "The calculated extents of reaction are %s" %(zeta_values)
        
-        self.zeta_values = zeta_values
         return zeta_values
 
-
-    def get_final_concentrations(self):
-        '''
-        Uses calculated zeta values into the final concentrations for each species. 
-
-        Returns:
-        --------
-        final_concentrations: list 
-            The final concentration for each species in the reaction network.
-        '''
-
-        final_concentrations = self.setup_keq_expressions(z = self.zeta_values)            
-
-        self.final_concentrations = final_concentrations
-        return final_concentrations    
     
-
     def solve_final_concentrations(self):
         '''
         Runs the class using a single method.
         '''
-        self.debug_sympy()
-        self.get_zeta_values()
-        self.get_final_concentrations()
 
-        print 'The final concentrations are: %s' %(self.final_concentrations)
+        zeta_values = self.get_zeta_values()
+        final_concentrations = self.setup_keq_expressions(zeta_values, return_value = 'mol_exps')
+            
+        print 'The final concentrations are: %s' %(final_concentrations)
 
