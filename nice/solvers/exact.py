@@ -44,7 +44,7 @@ class ExactEqmSolver(object):
             Each element represents a different zeta value.
         kwargs: dict
             Used to alter the return value of the function (to get the mol_exps back instead of keq_exps).
-            The only acceptable keyword currently is 'return_value' and the corresponding value is 'mol_exp'.
+            The only acceptable keyword currently is 'return_value' and the corresponding value is 'mol_exps'.
             If no kwargs are specified, the function returns keq_exps by default.
         
         Returns:
@@ -103,9 +103,10 @@ class ExactEqmSolver(object):
         '''
         Runs the class.
         '''
-
         zeta_values = self.get_zeta_values()
         final_concentrations = self.setup_keq_expressions(zeta_values, return_value = 'mol_exps')
             
         print 'The final concentrations are: %s' %(final_concentrations)
+
+        return final_concentrations
 

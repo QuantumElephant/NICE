@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+# TODO test the run method (solve_final_concentrations())
+
 from nice import *
 
 import nose
@@ -28,8 +30,8 @@ def test_rate_constants():
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     forward_rate_consts, reverse_rate_consts = solver.get_rate_constants()
 
-    assert forward_rate_consts == [0.5, 0.09090909090909094]
-    assert reverse_rate_consts == [0.5, 0.9090909090909091]
+    assert np.allclose(forward_rate_consts, [0.5, 0.0909090909])
+    assert np.allclose(reverse_rate_consts, [0.5, 0.9090909090])
     assert len(forward_rate_consts) == len(keq_values)
     assert len(reverse_rate_consts) == len(keq_values)
     assert len(forward_rate_consts) == len(reverse_rate_consts)
@@ -42,8 +44,8 @@ def test_rates():
     solver.reverse_rate_consts = [0.5, 0.9090909090909091]
     forward_rates, reverse_rates = solver.get_rates()
  
-    assert forward_rates == [0.5, 0.018181818181818188]
-    assert reverse_rates == [0.10000000000000001, 0.36363636363636365]
+    assert np.allclose(forward_rates, [0.5, 0.0181818181])
+    assert np.allclose(reverse_rates, [0.1, 0.3636363636])
     assert len(forward_rates) == len(keq_values)
     assert len(reverse_rates) == len(keq_values)
     assert len(forward_rates) == len(solver.forward_rate_consts)
@@ -55,10 +57,10 @@ def test_net_rates():
 
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     solver.forward_rates = [0.5, 0.018181818181818188]
-    solver.reverse_rates = [0.10000000000000001, 0.36363636363636365]
+    solver.reverse_rates = [0.1, 0.36363636363636365]
     net_rates = solver.get_net_rates()
 
-    assert net_rates == [0.40000000000000002, -0.34545454545454546]
+    assert np.allclose(net_rates, [0.4, -0.3454545454])
     assert len(net_rates) == len(keq_values)
     assert len(net_rates) == len(solver.forward_rates)
     assert len(net_rates) == len(solver.reverse_rates)
@@ -68,10 +70,10 @@ def test_probability_vector():
 
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     solver.forward_rates = [0.5, 0.018181818181818188]
-    solver.reverse_rates = [0.10000000000000001, 0.36363636363636365]
+    solver.reverse_rates = [0.1, 0.36363636363636365]
     prob_vector = solver.create_probability_vector()
     
-    assert prob_vector == [0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0]
+    assert np.allclose(prob_vector, [0.5092592592, 0.5277777777, 0.6296296296, 1.0])
     assert len(prob_vector) == 2*len(keq_values)
     assert len(prob_vector) == len(solver.forward_rates) + len (solver.reverse_rates)
 
@@ -79,10 +81,10 @@ def test_probability_vector():
 def test_net_probability_vector():
 
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
-    solver.net_rates = [0.40000000000000002, -0.34545454545454546]
+    solver.net_rates = [0.4, -0.34545454545454546]
     net_prob_vector = solver.create_net_rate_probability_vector()
     
-    assert net_prob_vector == [0.53658536585365857, 1.0]
+    assert np.allclose(net_prob_vector, [0.5365853658, 1.0])
     assert len(net_prob_vector) == len(keq_values)
 
 
@@ -131,33 +133,31 @@ def test_reaction():
     solver.selected_rxn = 0
     solver.do_reaction()
     
-    assert solver.concentrations == [0.99999994999999997, 0.20000010000000001, 0.40000000000000002]
+    assert np.allclose(solver.concentrations, [0.99999995, 0.2000001, 0.4])
     
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     solver.probability_vector = [0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0]
     solver.selected_rxn = 3
     solver.do_reaction()
 
-    assert solver.concentrations == [1.0, 0.20000020000000002, 0.39999990000000002]
+    assert np.allclose(solver.concentrations, [1.0, 0.2000002, 0.3999999])
 
 
 def test_net_reaction():
 
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     solver.selected_rxn = 0
-    solver.net_rates = [0.40000000000000002, -0.34545454545454546]
+    solver.net_rates = [0.4, -0.34545454545454546]
     solver.do_net_reaction()
     
-    assert solver.concentrations == [0.99999994999999997, 0.20000030000000002, 0.39999990000000002]
+    assert np.allclose(solver.concentrations, [0.99999995, 0.2000003, 0.3999999])
 
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
     solver.selected_rxn = 1
-    solver.net_rates = [0.40000000000000002, -0.34545454545454546]
+    solver.net_rates = [0.4, -0.34545454545454546]
     solver.do_net_reaction()
     print solver.concentrations
-    assert solver.concentrations == [1.0, 0.20000040000000002, 0.39999980000000002] # 1.0 is rounded- fix this error!
+    assert np.allclose(solver.concentrations, [1.0, 0.2000004, 0.3999998])
 
-# TODO: Testing run_simulation()?
-# TODO: Test for convergence (getting the right keq value back) 
 
     

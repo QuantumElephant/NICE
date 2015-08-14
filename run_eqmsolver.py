@@ -16,6 +16,7 @@ montecarlo_solver.run_simulation(1, net_rate_KMC = True)
 '''
 
 exact_solver = ExactEqmSolver(initial_concentrations_ex, keq_values, stoich_coeff, initial_guess)
-print exact_solver
-exact_solver.solve_final_concentrations()
+#exact_solver.solve_final_concentrations()
+keq_exps = exact_solver.setup_keq_expressions(z = [0.0,0.0])
 
+print keq_exps
