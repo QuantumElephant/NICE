@@ -113,13 +113,11 @@ def test_reaction():
     # KMC simulation
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
-    solver.selected_rxn = 0
-    solver.do_reaction()
+    solver.do_reaction(rxn_index=0)
     assert np.allclose(solver.concentrations, np.array([0.99999995, 0.2000001, 0.4]))
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step, net_rxn=False)
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
-    solver.selected_rxn = 3
-    solver.do_reaction()
+    solver.do_reaction(rxn_index=3)  #TODO:changing the index to other values wouldn't change
     assert np.allclose(solver.concentrations, np.array([1.0, 0.2000002, 0.3999999]))
 
 
@@ -128,13 +126,11 @@ def test_net_reaction():
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=True)
-    solver.selected_rxn = 0
     solver.net_rates = np.array([0.4, -0.34545454545454546])
-    solver.do_reaction()
+    solver.do_reaction(rxn_index=0)
     assert np.allclose(solver.concentrations, np.array([0.99999995, 0.2000003, 0.3999999]))
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step, net_rxn=True)
-    solver.selected_rxn = 1
     solver.net_rates = np.array([0.4, -0.34545454545454546])
-    solver.do_reaction()
+    solver.do_reaction(rxn_index=1)
     print solver.concentrations
     assert np.allclose(solver.concentrations, np.array([1.0, 0.2000004, 0.3999998]))

@@ -162,38 +162,37 @@ class KMCSolver(object):
             assert isinstance(rate, float)
 
         rxn_index = np.where(self.probability_vector > rate)[0][0]
-        self.selected_rxn = rxn_index
-        print 'Selected rxn: %s' %(self.selected_rxn)
-        print type(self.selected_rxn)
-        print
+        #self.selected_rxn = rxn_index
+        # print 'Selected rxn: %s' %(rxn_index)
+        # print type(rxn_index)
+        # print
         return rxn_index
 
 
-    def do_reaction(self, verbosity = 'on'):
+    def do_reaction(self, rxn_index):
         '''
         Changes the concentrations attribute according to which forward/reverse/net reaction is chosen.
 
         No returns, but changes the concetrations attribute for each time it is run.
         '''
+        print self.concentrations
         if self.net_rxn:
-            for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
+            for species, coeff in enumerate(self.stoich_coeff[rxn_index]):
                 print coeff
-                if self.net_rates[self.selected_rxn] >= 0:
+                if self.net_rates[rxn_index] >= 0:
                     self.concentrations[species] += coeff*self.concentration_step
-                elif self.net_rates[self.selected_rxn] < 0:
+                elif self.net_rates[rxn_index] < 0:
                     self.concentrations[species] -= coeff*self.concentration_step
         else:
             nforward_rxns = int(len(self.probability_vector)/2)
-            print self.selected_rxn
-            print self.selected_rxn - nforward_rxns
-            if self.selected_rxn < nforward_rxns: # Checks for a forward rxn
-                self.concentrations += self.stoich_coeff[self.selected_rxn] * self.concentration_step
+            print rxn_index
+            print rxn_index - nforward_rxns
+            if rxn_index < nforward_rxns: # Checks for a forward rxn
+                self.concentrations += self.stoich_coeff[rxn_index] * self.concentration_step
 
-            elif self.selected_rxn >= nforward_rxns: #Checks for a reverse rxn
-                self.concentrations -= self.stoich_coeff[self.selected_rxn - nforward_rxns] * self.concentration_step
-
-        if verbosity == 'on':
-            print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
+            elif rxn_index >= nforward_rxns: #Checks for a reverse rxn
+                self.concentrations -= self.stoich_coeff[rxn_index - nforward_rxns] * self.concentration_step
+        print self.concentrations
 
 
     def run_simulation(self, maxiter):
@@ -212,6 +211,7 @@ class KMCSolver(object):
         while i < maxiter:
             self.get_rates()
             self.create_probability_vector()
-            self.select_reaction()
-            self.do_reaction()
+            selected_index = self.select_reaction()
+            self.do_reaction(selected_index)
+            print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
             i +=1
