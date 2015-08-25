@@ -156,24 +156,7 @@ class KMCSolver(object):
         return probability_vector
 
 
-    # Move this into anoter function
-    def select_random_value(self):
-        '''
-        Generates a random number between 0 and 1, used to determine which reaction occurs.
-
-        Returns:
-        --------
-        r: float
-            A number between 0 and 1.
-        '''
-
-        r = random()
-
-        self.r = r
-        return r
-
-
-    def select_reaction(self):
+    def select_reaction(self, rate=None):
         '''
         Determines the reaction that will occur.
 
@@ -186,10 +169,16 @@ class KMCSolver(object):
             Corresponds to the stoich_coeff row index number of the reaction to be performed.
         '''
 
-        rxn_index = np.where(self.probability_vector > self.r)[0][0]
+        if rate is None:
+            rate = random()
+        else:
+            assert isinstance(rate, float)
+
+        rxn_index = np.where(self.probability_vector > rate)[0][0]
         self.selected_rxn = rxn_index
         print 'Selected rxn: %s' %(self.selected_rxn)
         print type(self.selected_rxn)
+        print
         return rxn_index
 
 

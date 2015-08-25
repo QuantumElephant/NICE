@@ -88,36 +88,22 @@ def test_net_probability_vector():
     assert len(net_prob_vector) == len(keq_values)
 
 
-def test_random_value():
-    # Get the rxn data
-    initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
-    # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
-    r = solver.select_random_value()
-    assert 0.0 <= r <= 1.0
-
-
 def test_select_reaction():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
-    solver.r = 0.0
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
-    selected_rxn = solver.select_reaction()
+    selected_rxn = solver.select_reaction(rate=0.0)
     assert selected_rxn == 0
-    solver.r = 0.6000
-    selected_rxn = solver.select_reaction()
+    selected_rxn = solver.select_reaction(rate=0.6000)
     assert selected_rxn == 2
-    solver.r = 0.9
-    selected_rxn = solver.select_reaction()
+    selected_rxn = solver.select_reaction(rate=0.9)
     assert selected_rxn == 3
     solver.probability_vector = np.array([0.53658536585365857, 1.0])
-    solver.r = 0.0
-    selected_rxn = solver.select_reaction()
+    selected_rxn = solver.select_reaction(rate=0.0)
     assert selected_rxn == 0
-    solver.r = 0.9
-    selected_rxn = solver.select_reaction()
+    selected_rxn = solver.select_reaction(rate=0.9)
     assert selected_rxn == 1
 
 
