@@ -25,7 +25,7 @@ def test_rate_constants():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     assert np.allclose(solver.forward_rate_consts, [0.5, 0.0909090909])
     assert np.allclose(solver.reverse_rate_consts, [0.5, 0.9090909090])
     assert len(solver.forward_rate_consts) == len(keq_values)
@@ -37,7 +37,7 @@ def test_rates():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     solver.forward_rate_consts = np.array([0.5, 0.09090909090909094])
     solver.reverse_rate_consts = np.array([0.5, 0.9090909090909091])
     forward_rates, reverse_rates = solver.get_rates()
@@ -54,10 +54,10 @@ def test_net_rates():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=True)
     solver.forward_rates = np.array([0.5, 0.018181818181818188])
     solver.reverse_rates = np.array([0.1, 0.36363636363636365])
-    net_rates = solver.get_net_rates()
+    net_rates = solver.get_rates()
     assert np.allclose(net_rates, [0.4, -0.3454545454])
     assert len(net_rates) == len(keq_values)
     assert len(net_rates) == len(solver.forward_rates)
@@ -68,7 +68,7 @@ def test_probability_vector():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     solver.forward_rates = np.array([0.5, 0.018181818181818188])
     solver.reverse_rates = np.array([0.1, 0.36363636363636365])
     prob_vector = solver.create_probability_vector()
@@ -81,9 +81,9 @@ def test_net_probability_vector():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=True)
     solver.net_rates = np.array([0.4, -0.34545454545454546])
-    net_prob_vector = solver.create_net_rate_probability_vector()
+    net_prob_vector = solver.create_probability_vector()
     assert np.allclose(net_prob_vector, [0.5365853658, 1.0])
     assert len(net_prob_vector) == len(keq_values)
 
@@ -92,7 +92,7 @@ def test_select_reaction():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
     selected_rxn = solver.select_reaction(rate=0.0)
     assert selected_rxn == 0
@@ -111,12 +111,12 @@ def test_reaction():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=False)
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
     solver.selected_rxn = 0
     solver.do_reaction()
     assert np.allclose(solver.concentrations, np.array([0.99999995, 0.2000001, 0.4]))
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step, net_rxn=False)
     solver.probability_vector = np.array([0.5092592592592593, 0.52777777777777779, 0.62962962962962965, 1.0])
     solver.selected_rxn = 3
     solver.do_reaction()
@@ -127,14 +127,14 @@ def test_net_reaction():
     # Get the rxn data
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step, net_rxn=True)
     solver.selected_rxn = 0
     solver.net_rates = np.array([0.4, -0.34545454545454546])
-    solver.do_net_reaction()
+    solver.do_reaction()
     assert np.allclose(solver.concentrations, np.array([0.99999995, 0.2000003, 0.3999999]))
-    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step)
+    solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi= phi, concentration_step = step, net_rxn=True)
     solver.selected_rxn = 1
     solver.net_rates = np.array([0.4, -0.34545454545454546])
-    solver.do_net_reaction()
+    solver.do_reaction()
     print solver.concentrations
     assert np.allclose(solver.concentrations, np.array([1.0, 0.2000004, 0.3999998]))

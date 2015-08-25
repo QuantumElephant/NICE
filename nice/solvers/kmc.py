@@ -11,7 +11,7 @@ class KMCSolver(object):
     The Kinetic Monte Carlo Solver.
     '''
 
-    def __init__(self, initial_concentrations, keq_values, stoich_coeff, phi=1, concentration_step=1.0e-7):
+    def __init__(self, initial_concentrations, keq_values, stoich_coeff, phi=1, concentration_step=1.0e-7, net_rxn=False):
 	'''
 	Arguments:
 	----------
@@ -53,6 +53,9 @@ class KMCSolver(object):
         if not isinstance(concentration_step, float):
             raise ValueError('Argument concentration_step should be a float.')
 
+        if not isinstance(net_rxn, bool):
+            raise ValueError('Argument net_rxn should be a boolean.')
+
         if stoich_coeff.shape[0] != keq_values.shape[0]:
             raise ValueError('The number of rows in stoich_coeff array should equal the length of keq_values array.')
 
@@ -64,6 +67,7 @@ class KMCSolver(object):
         self.stoich_coeff = stoich_coeff
         self.phi = phi
         self.concentration_step = concentration_step
+        self.net_rxn = net_rxn
 
         self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
 
@@ -74,7 +78,7 @@ class KMCSolver(object):
 
     def get_rates(self):
         '''
-        Uses reactant concetrations and rate constants to determine forward/reverse reaction rates.
+        Uses reactant concetrations and rate constants to determine forward/reverse/net reaction rates.
 
         Returns:
         --------
@@ -82,6 +86,9 @@ class KMCSolver(object):
             The forward rates for each reaction. Should be updated every iteration.
         reverse_rates: np.ndarray
             The reverse rates for each reaction. Should be updated every iteration.
+        net_rates: np.ndarray
+            The forward rate - reverse rate for each reaction. A negative value means that the reverse
+            reaction occurs, and a positive value represents a forward reaction.
         '''
 
         forward_rates = []
@@ -103,23 +110,14 @@ class KMCSolver(object):
 
         print 'The forward rates: %s' %(forward_rates)
         print 'The reverse rates: %s' %(reverse_rates)
-        return np.array(forward_rates), np.array(reverse_rates)
 
-
-    def get_net_rates(self):
-        '''
-        Uses forward and reverse rates to determine the net reaction rate/direction
-
-        Returns:
-        --------
-        net_rates: np.ndarray
-            The forward rate - reverse rate for each reaction. A negative value means that the reverse
-            reaction occurs, and a positive value represents a forward reaction.
-        '''
-        net_rates = self.forward_rates - self.reverse_rates
-        print 'Net rates: %s' %(net_rates)
-        self.net_rates = net_rates
-        return net_rates
+        if self.net_rxn:
+            net_rates = self.forward_rates - self.reverse_rates
+            print 'Net rates: %s' %(net_rates)
+            self.net_rates = net_rates
+            return net_rates
+        else:
+            return np.array(forward_rates), np.array(reverse_rates)
 
 
     def create_probability_vector(self):
@@ -128,31 +126,20 @@ class KMCSolver(object):
 
         Returns:
         --------
-        probaility_vector: list
+        probaility_vector: np.ndarray
             Contains cumulative probabilities for the ith forward/reverse reaction to occur.
         '''
-        rates = np.append(self.forward_rates, self.reverse_rates)
+        if self.net_rxn:
+            rates = abs(self.net_rates)
+        else:
+            rates = np.append(self.forward_rates, self.reverse_rates)
+        # Cumulative sum of rates
         probability_vector = np.cumsum(rates)
         # Normalize the probability vector
         probability_vector /= probability_vector[-1]
-        self.probability_vector = probability_vector
-        return probability_vector
-
-
-    def create_net_rate_probability_vector(self):
-        '''
-        Creates a vector of total length 1, with the ith entry correponding to the probability of the ith reaction occuring.
-
-        Returns:
-        --------
-        probability_vector: list
-            Contains cumulative probabilities for the ith reaction to occur.
-        '''
-        probability_vector = np.cumsum(abs(self.net_rates))
-        probability_vector /= probability_vector[-1]
-        self.probability_vector = probability_vector
         print 'Prob vector: %s' %(probability_vector)
         print 'Prob vector sum: %s' %(sum(probability_vector))
+        self.probability_vector = probability_vector
         return probability_vector
 
 
@@ -184,41 +171,33 @@ class KMCSolver(object):
 
     def do_reaction(self, verbosity = 'on'):
         '''
-        Changes the concentrations attribute according to which forward/reverse reaction is chosen.
-        '''
-
-        nforward_rxns = int(len(self.probability_vector)/2)
-        print self.selected_rxn
-        print self.selected_rxn - nforward_rxns
-        if self.selected_rxn < nforward_rxns: # Checks for a forward rxn
-            self.concentrations += self.stoich_coeff[self.selected_rxn] * self.concentration_step
-
-        elif self.selected_rxn >= nforward_rxns: #Checks for a reverse rxn
-            self.concentrations -= self.stoich_coeff[self.selected_rxn - nforward_rxns] * self.concentration_step
-
-        if verbosity == 'on':
-            print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
-
-
-    def do_net_reaction(self, verbosity = 'on'):
-        '''
-        Changes the concentrations attribute according to which net reaction was selected.
+        Changes the concentrations attribute according to which forward/reverse/net reaction is chosen.
 
         No returns, but changes the concetrations attribute for each time it is run.
         '''
+        if self.net_rxn:
+            for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
+                print coeff
+                if self.net_rates[self.selected_rxn] >= 0:
+                    self.concentrations[species] += coeff*self.concentration_step
+                elif self.net_rates[self.selected_rxn] < 0:
+                    self.concentrations[species] -= coeff*self.concentration_step
+        else:
+            nforward_rxns = int(len(self.probability_vector)/2)
+            print self.selected_rxn
+            print self.selected_rxn - nforward_rxns
+            if self.selected_rxn < nforward_rxns: # Checks for a forward rxn
+                self.concentrations += self.stoich_coeff[self.selected_rxn] * self.concentration_step
 
-        for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
-            print coeff
-            if self.net_rates[self.selected_rxn] >= 0:
-                self.concentrations[species] += coeff*self.concentration_step
-            elif self.net_rates[self.selected_rxn] < 0:
-                self.concentrations[species] -= coeff*self.concentration_step
+            elif self.selected_rxn >= nforward_rxns: #Checks for a reverse rxn
+                self.concentrations -= self.stoich_coeff[self.selected_rxn - nforward_rxns] * self.concentration_step
 
         if verbosity == 'on':
             print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
 
-    # MOve as musch as possible to init
-    def run_simulation(self, maxiter, net_rate_KMC = False):
+
+    def run_simulation(self, maxiter):
+
         '''
         Runs the calculation.
 
@@ -229,19 +208,10 @@ class KMCSolver(object):
             The number of iterations the algorithm will run for.
         '''
 
-        self.get_rate_constants()
         i = 0
         while i < maxiter:
             self.get_rates()
-            if net_rate_KMC == True:
-                self.get_net_rates()
-                self.create_net_rate_probability_vector()
-                self.select_random_value()
-                self.select_reaction()
-                self.do_net_reaction()
-            elif net_rate_KMC == False:
-                self.create_probability_vector()
-                self.select_random_value()
-                self.select_reaction()
-                self.do_reaction()
+            self.create_probability_vector()
+            self.select_reaction()
+            self.do_reaction()
             i +=1
