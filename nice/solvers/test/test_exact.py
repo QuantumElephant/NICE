@@ -9,8 +9,8 @@ def get_rxn():
     '''
     # The values below are from the phys chem textbook example, pg. 440 ---> Citation?
     # The initial values are assumed to be in units of molar instead of mol.
-    initial_conc = [1.0, 0.2, 0.4]
-    keq = [1, 0.1]
+    initial_conc = np.array([1.0, 0.2, 0.4])
+    keq = np.array([1, 0.1])
     coeff = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     # Default values already given to the class- provided here to make them more explicit.
     mol_frac = False
@@ -39,7 +39,7 @@ def test_zeta_values():
     # Get the rxn data
     initial_conc, keq, coeff, mol_frac, guess = get_rxn()
     # Exact simulation
-    solver = ExactEqmSolver(initial_conc, keq, coeff, initial_guess=[-0.245, -0.4334])
+    solver = ExactEqmSolver(initial_conc, keq, coeff, initial_guess=np.array([-0.245, -0.4334]))
     # Used to overwrite normal equation setup function passed to get_zeta_values
     def setup_test_expressions(z):
         return [(-0.5*z[0] - 0.5*z[1] + 1.0)**(-0.5)*(1.0*z[0] - 1.0*z[1] + 0.2)**1.0 - 1.0, (1.0*z[1] + 0.4)**1.0*(-0.5*z[0] - 0.5*z[1] + 1.0)**(-0.5)*(1.0*z[0] - 1.0*z[1] + 0.2)**(-1.0) - 0.1]

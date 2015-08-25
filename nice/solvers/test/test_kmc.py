@@ -12,8 +12,8 @@ def get_rxn():
     '''
     # The values below are from the phys chem textbook example, pg. 440 ---> Citation needed?
     # The initial value units are assumed to be molar instead of mol.
-    initial_conc = [1.0, 0.2, 0.4]
-    keq_values = [1, 0.1]
+    initial_conc = np.array([1.0, 0.2, 0.4])
+    keq_values = np.array([1, 0.1])
     stoich_coeff = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     # These are the default values already given to the class. They are provided here to make things more explicit.
     phi = 1
