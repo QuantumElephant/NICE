@@ -26,12 +26,11 @@ def test_rate_constants():
     initial_conc, keq_values, stoich_coeff, phi, step = get_rxn()
     # KMC simulation
     solver = KMCSolver(initial_conc, keq_values, stoich_coeff, phi=phi, concentration_step=step)
-    forward_rate_consts, reverse_rate_consts = solver.get_rate_constants()
-    assert np.allclose(forward_rate_consts, [0.5, 0.0909090909])
-    assert np.allclose(reverse_rate_consts, [0.5, 0.9090909090])
-    assert len(forward_rate_consts) == len(keq_values)
-    assert len(reverse_rate_consts) == len(keq_values)
-    assert len(forward_rate_consts) == len(reverse_rate_consts)
+    assert np.allclose(solver.forward_rate_consts, [0.5, 0.0909090909])
+    assert np.allclose(solver.reverse_rate_consts, [0.5, 0.9090909090])
+    assert len(solver.forward_rate_consts) == len(keq_values)
+    assert len(solver.reverse_rate_consts) == len(keq_values)
+    assert len(solver.forward_rate_consts) == len(solver.reverse_rate_consts)
 
 
 def test_rates():

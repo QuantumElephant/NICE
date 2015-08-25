@@ -67,27 +67,9 @@ class KMCSolver(object):
 
         self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
 
-
-    def get_rate_constants(self):
-	'''
-        Return an estimate of the forward and reverse rate constants.
-
-        Returns:
-        --------
-        forward_rate_consts: np.ndarray
-            The forward rate constants used to calculate forward rates. Order is the same as the keq_values
-            order.
-        reverse_rate_consts: np.ndarray
-            The reverse rate constants used to calculate reverse rates. Order is the same as the keq_values
-            order.
-	'''
-        reverse_rate_consts = self.phi / (self.keq_values + 1.0)
-        forward_rate_consts = self.phi - reverse_rate_consts
-        self.forward_rate_consts = forward_rate_consts
-        self.reverse_rate_consts = reverse_rate_consts
-        print 'The forward rate constants are: %s' % (forward_rate_consts)
-        print 'The reverse rate constants are: %s' % (reverse_rate_consts)
-        return forward_rate_consts, reverse_rate_consts
+        # Calculate the forward and reverse rate constants (k)
+        self.reverse_rate_consts = self.phi / (self.keq_values + 1.0)
+        self.forward_rate_consts = self.phi - self.reverse_rate_consts
 
 
     def get_rates(self):
