@@ -5,22 +5,23 @@ from __future__ import division
 import numpy as np
 from random import random
 
+
 class KMCSolver(object):
     '''
     The Kinetic Monte Carlo Solver.
     '''
 
-    def __init__(self, initial_concentrations, keq_values, stoich_coeff, phi = 1, concentration_step = 0.0000001):
+    def __init__(self, initial_concentrations, keq_values, stoich_coeff, phi=1, concentration_step=1.0e-7):
 	'''
 	Arguments:
 	----------
-        initial_concentrations: list
+        initial_concentrations: np.ndarray
             The number of molecules of each reagent. The length must be == to the number of columns in
             the stoich_coeff array. The entry order must be the same as the reagent order in stoich_coeff.
-        keq_values: list
+        keq_values: np.ndarray
             The equillibrium constants for each reaction. The length must be == to the number of rows in
             stoic_coeff. The order of keq values must correspond to the reaction order in stoich_coeff.
-        stoich_coeff: numpy array
+        stoich_coeff: np.ndarray
             Each column represents a species number, while each row represents a reversible reaction.
             Coefficients are negative if the species is a reactant, positive if the species is a
             product, and zero if the species doesn't participate in the reaction at all. Every species
@@ -36,15 +37,36 @@ class KMCSolver(object):
             will take a long time to converge to a solution. Typically 10e-6 orders of magnitude lower
             than your highest concentration, and at least 10e-3 to 10e-5 less than your lowest concentration.
 	'''
-        # Rewrite the type checks
+
+        if not (isinstance(initial_concentrations, np.ndarray) and initial_concentrations.ndim == 1):
+            raise ValueError('Argument initial_concentrations should be a 1D array.')
+
+        if not (isinstance(keq_values, np.ndarray) and keq_values.ndim == 1):
+            raise ValueError('Argument keq_values should be a 1D array.')
+
+        if not (isinstance(stoich_coeff, np.ndarray) and stoich_coeff.ndim == 2):
+            raise ValueError('Argument stoich_coeff should be a 2D array.')
+
+        if not isinstance(phi, int):
+            raise ValueError('Argument phi should be an integer.')
+
+        if not isinstance(concentration_step, float):
+            raise ValueError('Argument concentration_step should be a float.')
+
+        if stoich_coeff.shape[0] != keq_values.shape[0]:
+            raise ValueError('The number of rows in stoich_coeff array should equal the length of keq_values array.')
+
+        if stoich_coeff.shape[1] != initial_concentrations.shape[0]:
+            raise ValueError('The number of columns in stoich_coeff array should equal the length of the initial_concentrations array.')
+
         self.initial_concentrations = initial_concentrations
-        self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
         self.keq_values = keq_values
         self.stoich_coeff = stoich_coeff
-        print stoich_coeff
         self.phi = phi
         self.concentration_step = concentration_step
-        # Initialize attributes here!
+
+        self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
+
 
     def get_rate_constants(self):
 	'''
