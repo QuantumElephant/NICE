@@ -25,20 +25,20 @@ guess = None
 def test_keq_expressions():
 
     solver = ExactEqmSolver(initial_conc, keq, coeff, initial_guess = guess)
-    
+
     keq_values = solver.setup_keq_expressions(z = [0.45500537, -0.30738121], return_value = 'mol_exps')
     assert np.allclose(keq_values, [0.9261879203, 0.9623865752, 0.0926187920])
 
     keq_values = solver.setup_keq_expressions(z = [0.0, 0.0], return_value = 'mol_exps')
     assert np.allclose(keq_values, [1.0, 0.2, 0.4])
 
-    keq_values = solver.setup_keq_expressions(z = [0.0,0.0])    
+    keq_values = solver.setup_keq_expressions(z = [0.0,0.0])
     assert np.allclose(keq_values, [-0.8, 1.9])
 
-    keq_values = solver.setup_keq_expressions(z = [0.1,0.1])    
+    keq_values = solver.setup_keq_expressions(z = [0.1,0.1])
     assert np.allclose(keq_values, [-0.7891814893, 2.5352313834])
-    
-    keq_values = solver.setup_keq_expressions(z = [0.45500537, -0.30738121])    
+
+    keq_values = solver.setup_keq_expressions(z = [0.45500537, -0.30738121])
     assert np.allclose(keq_values, [0.0, 0.0])
 
 
@@ -59,7 +59,7 @@ def test_zeta_values():
 def test_concentrations():
 
     solver = ExactEqmSolver(initial_conc, keq, coeff, initial_guess = guess)
-    
+
     # Used to overwrite the get_zeta_values method to control passed zeta values.
     def test_zeta():
         return [0.45500537, -0.30738121]
@@ -68,5 +68,3 @@ def test_concentrations():
     final_concentrations = solver.solve_final_concentrations()
 
     assert np.allclose(final_concentrations, [0.9261879203, 0.9623865752, 0.0926187920])
-   
-
