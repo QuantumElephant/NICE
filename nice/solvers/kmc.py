@@ -74,29 +74,19 @@ class KMCSolver(object):
 
         Returns:
         --------
-        forward_rate_consts: list
+        forward_rate_consts: np.ndarray
             The forward rate constants used to calculate forward rates. Order is the same as the keq_values
             order.
-        reverse_rate_consts: list
+        reverse_rate_consts: np.ndarray
             The reverse rate constants used to calculate reverse rates. Order is the same as the keq_values
             order.
 	'''
-
-        forward_rate_consts = []
-        reverse_rate_consts = []
-
-        for keq in self.keq_values:
-
-            reverse_rate_const = self.phi/(keq + 1)
-            forward_rate_const = self.phi - reverse_rate_const
-
-            forward_rate_consts.append(forward_rate_const)
-            reverse_rate_consts.append(reverse_rate_const)
-
+        reverse_rate_consts = self.phi / (self.keq_values + 1.0)
+        forward_rate_consts = self.phi - reverse_rate_consts
         self.forward_rate_consts = forward_rate_consts
         self.reverse_rate_consts = reverse_rate_consts
-        print 'The forward rate constants are: %s' %(forward_rate_consts)
-        print 'The reverse rate constants are: %s' %(reverse_rate_consts)
+        print 'The forward rate constants are: %s' % (forward_rate_consts)
+        print 'The reverse rate constants are: %s' % (reverse_rate_consts)
         return forward_rate_consts, reverse_rate_consts
 
 
@@ -106,42 +96,32 @@ class KMCSolver(object):
 
         Returns:
         --------
-        forward_rates: list
+        forward_rates: np.ndarray
             The forward rates for each reaction. Should be updated every iteration.
-        reverse_rates: list
+        reverse_rates: np.ndarray
             The reverse rates for each reaction. Should be updated every iteration.
         '''
 
         forward_rates = []
         reverse_rates = []
 
-
-        for r, row in enumerate(self.stoich_coeff):
-            print row
-            forward_rate = self.forward_rate_consts[r]
-            reverse_rate = self.reverse_rate_consts[r]
-            # This can be done in a much more natural way, given that the coeffs are signed.
-            for i, entry in enumerate(row):
-                print entry
-                if entry < 0: # checks if the species is a reactant
-                    print 'forward'
-                    forward_rate *= self.concentrations[i]**abs(entry) # takes stoich coeff into account
-                if entry > 0: # checks if species is a product
-                    print 'rev'
-                    print self.concentrations[i]
-                    reverse_rate *= self.concentrations[i]**abs(entry)
-                if entry == 0: # checks if species is not a part of this reaction
-                    pass
-
+        for i, coeffs in enumerate(self.stoich_coeff):
+            # calculating the forward rate of reaction i
+            forward_rate = np.array([np.power(self.concentrations[j], abs(coeff)) for j, coeff in enumerate(coeffs) if coeff < 0])
+            forward_rate = self.forward_rate_consts[i] * np.prod(forward_rate)
             forward_rates.append(forward_rate)
+
+            # calculating the reverse rate of reactions i
+            reverse_rate = np.array([np.power(self.concentrations[j], coeff) for j, coeff in enumerate(coeffs) if coeff > 0])
+            reverse_rate = self.reverse_rate_consts[i] * np.prod(reverse_rate)
             reverse_rates.append(reverse_rate)
 
-            self.forward_rates = forward_rates
-            self.reverse_rates = reverse_rates
+        self.forward_rates = np.array(forward_rates)
+        self.reverse_rates = np.array(reverse_rates)
 
         print 'The forward rates: %s' %(forward_rates)
         print 'The reverse rates: %s' %(reverse_rates)
-        return forward_rates, reverse_rates
+        return np.array(forward_rates), np.array(reverse_rates)
 
 
     def get_net_rates(self):
@@ -150,15 +130,11 @@ class KMCSolver(object):
 
         Returns:
         --------
-        net_rates: list
+        net_rates: np.ndarray
             The forward rate - reverse rate for each reaction. A negative value means that the reverse
             reaction occurs, and a positive value represents a forward reaction.
         '''
-        # Arrays can be subtracted
-        net_rates = []
-        for forward_rate, reverse_rate in zip(self.forward_rates, self.reverse_rates):
-            net_rates.append(forward_rate - reverse_rate)
-
+        net_rates = self.forward_rates - self.reverse_rates
         print 'Net rates: %s' %(net_rates)
         self.net_rates = net_rates
         return net_rates
@@ -173,19 +149,10 @@ class KMCSolver(object):
         probaility_vector: list
             Contains cumulative probabilities for the ith forward/reverse reaction to occur.
         '''
-
-        probability_vector = []
-        full_rates = self.forward_rates + self.reverse_rates
-        cumulative_rate = 0
-        for rate in full_rates:
-            cumulative_rate += rate
-            probability_vector.append(cumulative_rate)
-
-        ktot = probability_vector[-1]
-        for i, entry in enumerate(probability_vector):
-            probability_vector[i] = entry/ktot
-
-        print probability_vector
+        rates = np.append(self.forward_rates, self.reverse_rates)
+        probability_vector = np.cumsum(rates)
+        # Normalize the probability vector
+        probability_vector /= probability_vector[-1]
         self.probability_vector = probability_vector
         return probability_vector
 
@@ -199,23 +166,13 @@ class KMCSolver(object):
         probability_vector: list
             Contains cumulative probabilities for the ith reaction to occur.
         '''
-
-        probability_vector = []
-
-        rate_sum = 0
-        for rate in self.net_rates:
-            rate_sum += abs(rate)
-            probability_vector.append(rate_sum)
-
-        # Normalizes the probability vector object to a total length of 1
-        ktot = probability_vector[-1]
-        for i, entry in enumerate(probability_vector):
-            probability_vector[i] = entry/ktot
-
+        probability_vector = np.cumsum(abs(self.net_rates))
+        probability_vector /= probability_vector[-1]
         self.probability_vector = probability_vector
         print 'Prob vector: %s' %(probability_vector)
         print 'Prob vector sum: %s' %(sum(probability_vector))
         return probability_vector
+
 
     # Move this into anoter function
     def select_random_value(self):
@@ -247,14 +204,11 @@ class KMCSolver(object):
             Corresponds to the stoich_coeff row index number of the reaction to be performed.
         '''
 
-        for i, element in enumerate(self.probability_vector):
-            if element > self.r:
-                selected_rxn = i
-                self.selected_rxn = selected_rxn
-                print 'Selected rxn: %s' %(selected_rxn)
-                return selected_rxn
-            else:
-                pass
+        rxn_index = np.where(self.probability_vector > self.r)[0][0]
+        self.selected_rxn = rxn_index
+        print 'Selected rxn: %s' %(self.selected_rxn)
+        print type(self.selected_rxn)
+        return rxn_index
 
 
     def do_reaction(self, verbosity = 'on'):
@@ -266,11 +220,10 @@ class KMCSolver(object):
         print self.selected_rxn
         print self.selected_rxn - nforward_rxns
         if self.selected_rxn < nforward_rxns: # Checks for a forward rxn
-            for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
-                self.concentrations[species] = self.concentrations[species] + coeff*self.concentration_step
+            self.concentrations += self.stoich_coeff[self.selected_rxn] * self.concentration_step
+
         elif self.selected_rxn >= nforward_rxns: #Checks for a reverse rxn
-            for species, coeff in enumerate(self.stoich_coeff[int(self.selected_rxn - nforward_rxns)]):
-                self.concentrations[species] = self.concentrations[species] - coeff*self.concentration_step
+            self.concentrations -= self.stoich_coeff[self.selected_rxn - nforward_rxns] * self.concentration_step
 
         if verbosity == 'on':
             print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
@@ -286,9 +239,9 @@ class KMCSolver(object):
         for species, coeff in enumerate(self.stoich_coeff[self.selected_rxn]):
             print coeff
             if self.net_rates[self.selected_rxn] >= 0:
-                self.concentrations[species] = self.concentrations[species] + coeff*self.concentration_step
+                self.concentrations[species] += coeff*self.concentration_step
             elif self.net_rates[self.selected_rxn] < 0:
-                self.concentrations[species] = self.concentrations[species] - coeff*self.concentration_step
+                self.concentrations[species] -= coeff*self.concentration_step
 
         if verbosity == 'on':
             print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
