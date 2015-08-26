@@ -69,16 +69,18 @@ class KMCSolver(object):
         self.concentration_step = concentration_step
         self.net_rxn = net_rxn
 
-        self.concentrations = initial_concentrations # The initial_concentrations attribute shouldn't be overwritten
-
         # Calculate the forward and reverse rate constants (k)
         self.reverse_rate_consts = self.phi / (self.keq_values + 1.0)
         self.forward_rate_consts = self.phi - self.reverse_rate_consts
 
+        # Set the concentrations and calculate the forward/reverse/net rates
+        self.concentrations = np.copy(self.initial_concentrations)
+        self.forward_rates, self.reverse_rates, self.net_rates = self.calculate_rates()
 
-    def get_rates(self):
+
+    def calculate_rates(self):
         '''
-        Uses reactant concetrations and rate constants to determine forward/reverse/net reaction rates.
+        Uses rate constants and recent concentrations to determine forward/reverse/net reaction rates.
 
         Returns:
         --------
@@ -105,19 +107,11 @@ class KMCSolver(object):
             reverse_rate = self.reverse_rate_consts[i] * np.prod(reverse_rate)
             reverse_rates.append(reverse_rate)
 
-        self.forward_rates = np.array(forward_rates)
-        self.reverse_rates = np.array(reverse_rates)
+        forward_rates = np.array(forward_rates)
+        reverse_rates = np.array(reverse_rates)
+        net_rates = forward_rates - reverse_rates
 
-        print 'The forward rates: %s' %(forward_rates)
-        print 'The reverse rates: %s' %(reverse_rates)
-
-        if self.net_rxn:
-            net_rates = self.forward_rates - self.reverse_rates
-            print 'Net rates: %s' %(net_rates)
-            self.net_rates = net_rates
-            return net_rates
-        else:
-            return np.array(forward_rates), np.array(reverse_rates)
+        return forward_rates, reverse_rates, net_rates
 
 
     def create_probability_vector(self):
@@ -137,9 +131,6 @@ class KMCSolver(object):
         probability_vector = np.cumsum(rates)
         # Normalize the probability vector
         probability_vector /= probability_vector[-1]
-        print 'Prob vector: %s' %(probability_vector)
-        print 'Prob vector sum: %s' %(sum(probability_vector))
-        self.probability_vector = probability_vector
         return probability_vector
 
 
@@ -155,17 +146,13 @@ class KMCSolver(object):
         selected_rxn: int
             Corresponds to the stoich_coeff row index number of the reaction to be performed.
         '''
-
+        # Calculate the rate probability
+        probability_vector = self.create_probability_vector()
         if rate is None:
             rate = random()
         else:
             assert isinstance(rate, float)
-
-        rxn_index = np.where(self.probability_vector > rate)[0][0]
-        #self.selected_rxn = rxn_index
-        # print 'Selected rxn: %s' %(rxn_index)
-        # print type(rxn_index)
-        # print
+        rxn_index = np.where(probability_vector > rate)[0][0]
         return rxn_index
 
 
@@ -175,7 +162,6 @@ class KMCSolver(object):
 
         No returns, but changes the concetrations attribute for each time it is run.
         '''
-        print self.concentrations
         if self.net_rxn:
             for species, coeff in enumerate(self.stoich_coeff[rxn_index]):
                 print coeff
@@ -184,9 +170,7 @@ class KMCSolver(object):
                 elif self.net_rates[rxn_index] < 0:
                     self.concentrations[species] -= coeff*self.concentration_step
         else:
-            nforward_rxns = int(len(self.probability_vector)/2)
-            print rxn_index
-            print rxn_index - nforward_rxns
+            nforward_rxns = int(len(self.forward_rates))
             if rxn_index < nforward_rxns: # Checks for a forward rxn
                 self.concentrations += self.stoich_coeff[rxn_index] * self.concentration_step
 
@@ -206,12 +190,18 @@ class KMCSolver(object):
         maxiter: int
             The number of iterations the algorithm will run for.
         '''
-
+        # The concentrations and forward/reverse/net rates change as the simulation runs
         i = 0
         while i < maxiter:
-            self.get_rates()
-            self.create_probability_vector()
+            # update rates
+            self.forwrd_rates, self.reverse_rates, self.net_rates = self.calculate_rates()
+            # select the reaction to happen
             selected_index = self.select_reaction()
+            # have the selected reaction change concentrations
             self.do_reaction(selected_index)
-            print 'The concentrations at the end of this iteration are: %s' %(self.concentrations)
+            print 'iterations:', i
+            print 'concentration:', self.concentrations
+            print 'forward rates:', self.forward_rates
+            print 'reverse rates:', self.reverse_rates
+            print 'net     rates:', self.net_rates
             i +=1
