@@ -80,7 +80,7 @@ class KMCSolver(object):
 
     def calculate_rates(self):
         '''
-        Uses rate constants and recent concentrations to determine forward/reverse/net reaction rates.
+        Return the forward/reverse/net reaction rates baed on the rate constants and current concentrations.
 
         Returns:
         --------
@@ -92,25 +92,20 @@ class KMCSolver(object):
             The forward rate - reverse rate for each reaction. A negative value means that the reverse
             reaction occurs, and a positive value represents a forward reaction.
         '''
-
         forward_rates = []
         reverse_rates = []
-
         for i, coeffs in enumerate(self.stoich_coeff):
             # calculating the forward rate of reaction i
             forward_rate = np.array([np.power(self.concentrations[j], abs(coeff)) for j, coeff in enumerate(coeffs) if coeff < 0])
             forward_rate = self.forward_rate_consts[i] * np.prod(forward_rate)
             forward_rates.append(forward_rate)
-
             # calculating the reverse rate of reactions i
             reverse_rate = np.array([np.power(self.concentrations[j], coeff) for j, coeff in enumerate(coeffs) if coeff > 0])
             reverse_rate = self.reverse_rate_consts[i] * np.prod(reverse_rate)
             reverse_rates.append(reverse_rate)
-
         forward_rates = np.array(forward_rates)
         reverse_rates = np.array(reverse_rates)
         net_rates = forward_rates - reverse_rates
-
         return forward_rates, reverse_rates, net_rates
 
 
@@ -136,10 +131,10 @@ class KMCSolver(object):
 
     def select_reaction(self, rate=None):
         '''
-        Determines the reaction that will occur.
+        Return the index of the reaction that will occur.
 
-        Compares r to each cumulative probability in probability vector to determine which
-        reaction will occur in this iteration.
+        Compares rate to each cumulative rate probability to determine which
+        reaction will occur.
 
         Returns:
         --------
@@ -152,37 +147,38 @@ class KMCSolver(object):
             rate = random()
         else:
             assert isinstance(rate, float)
+        # Select the reaction
         rxn_index = np.where(probability_vector > rate)[0][0]
         return rxn_index
 
 
     def do_reaction(self, rxn_index):
         '''
-        Changes the concentrations attribute according to which forward/reverse/net reaction is chosen.
+        Changes the concentrations according to which forward/reverse/net reaction is chosen.
 
         No returns, but changes the concetrations attribute for each time it is run.
         '''
         if self.net_rxn:
+            # net reaction indexed rxn_index changes the concentrations
             for species, coeff in enumerate(self.stoich_coeff[rxn_index]):
-                print coeff
                 if self.net_rates[rxn_index] >= 0:
                     self.concentrations[species] += coeff*self.concentration_step
                 elif self.net_rates[rxn_index] < 0:
                     self.concentrations[species] -= coeff*self.concentration_step
         else:
             nforward_rxns = int(len(self.forward_rates))
-            if rxn_index < nforward_rxns: # Checks for a forward rxn
+            if rxn_index < nforward_rxns:
+                # forward reaction indexed rxn_index changes the concentrations
                 self.concentrations += self.stoich_coeff[rxn_index] * self.concentration_step
 
-            elif rxn_index >= nforward_rxns: #Checks for a reverse rxn
+            elif rxn_index >= nforward_rxns:
+                # reverse reaction indexed rxn_index changes the concentrations
                 self.concentrations -= self.stoich_coeff[rxn_index - nforward_rxns] * self.concentration_step
-        print self.concentrations
 
 
     def run_simulation(self, maxiter):
-
         '''
-        Runs the calculation.
+        Runs the KMC simulation in every step of which the concentraions and rates change.
 
         Arguments:
         ----------
@@ -204,4 +200,5 @@ class KMCSolver(object):
             print 'forward rates:', self.forward_rates
             print 'reverse rates:', self.reverse_rates
             print 'net     rates:', self.net_rates
+            print
             i +=1
