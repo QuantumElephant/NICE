@@ -1,51 +1,32 @@
 #!/usr/bin/env python
+'''Kinetic Monte Carlo simultaneous equilibrium solver.'''
 
 from __future__ import division
-
 import numpy as np
 from random import random
+from nice.solvers.base import BaseSolver
 
 
-class KMCSolver(object):
+class KMCSolver(BaseSolver):
     '''
-    The Kinetic Monte Carlo Solver.
+    The Kinetic Monte Carlo (KMC) simultaneous equilibrium solver.
     '''
 
     def __init__(self, initial_concentrations, keq_values, stoich_coeff, phi=1, concentration_step=1.0e-7, net_rxn=False):
-	'''
-	Arguments:
-	----------
-        initial_concentrations: np.ndarray
-            The number of molecules of each reagent. The length must be == to the number of columns in
-            the stoich_coeff array. The entry order must be the same as the reagent order in stoich_coeff.
-        keq_values: np.ndarray
-            The equillibrium constants for each reaction. The length must be == to the number of rows in
-            stoic_coeff. The order of keq values must correspond to the reaction order in stoich_coeff.
-        stoich_coeff: np.ndarray
-            Each column represents a species number, while each row represents a reversible reaction.
-            Coefficients are negative if the species is a reactant, positive if the species is a
-            product, and zero if the species doesn't participate in the reaction at all. Every species
-            must be part of each reaction row, even if it doesn't participate in the reaction (the
-            coefficient will be zero in that case.
-        phi: int
-            Used as a constant value in order to construct a second equation to solve for the forward
-            and reverse rate constants. phi == k1 + k-1. Able to make this approximation since we don't
-            care about reaction kinetics, only final values.
-        concentration_step: float
-            The value that concentrations can change during every iteration. As this value is decreased,
-            final concentration values are more precise. However, if this number is too small, the solver
-            will take a long time to converge to a solution. Typically 10e-6 orders of magnitude lower
-            than your highest concentration, and at least 10e-3 to 10e-5 less than your lowest concentration.
-	'''
-
-        if not (isinstance(initial_concentrations, np.ndarray) and initial_concentrations.ndim == 1):
-            raise ValueError('Argument initial_concentrations should be a 1D array.')
-
-        if not (isinstance(keq_values, np.ndarray) and keq_values.ndim == 1):
-            raise ValueError('Argument keq_values should be a 1D array.')
-
-        if not (isinstance(stoich_coeff, np.ndarray) and stoich_coeff.ndim == 2):
-            raise ValueError('Argument stoich_coeff should be a 2D array.')
+        '''
+        Arguments:
+        ----------
+            phi: int
+                Used as a constant value in order to construct a second equation to solve for the forward
+                and reverse rate constants. phi == k1 + k-1. Able to make this approximation since we don't
+                care about reaction kinetics, only final values.
+            concentration_step: float
+                The value that concentrations can change during every iteration. As this value is decreased,
+                final concentration values are more precise. However, if this number is too small, the solver
+                will take a long time to converge to a solution. Typically 10e-6 orders of magnitude lower
+                than your highest concentration, and at least 10e-3 to 10e-5 less than your lowest concentration.
+        '''
+        super(KMCSolver, self).__init__(initial_concentrations, keq_values, stoich_coeff)
 
         if not isinstance(phi, int):
             raise ValueError('Argument phi should be an integer.')
@@ -56,26 +37,62 @@ class KMCSolver(object):
         if not isinstance(net_rxn, bool):
             raise ValueError('Argument net_rxn should be a boolean.')
 
-        if stoich_coeff.shape[0] != keq_values.shape[0]:
-            raise ValueError('The number of rows in stoich_coeff array should equal the length of keq_values array.')
-
-        if stoich_coeff.shape[1] != initial_concentrations.shape[0]:
-            raise ValueError('The number of columns in stoich_coeff array should equal the length of the initial_concentrations array.')
-
-        self.initial_concentrations = initial_concentrations
-        self.keq_values = keq_values
-        self.stoich_coeff = stoich_coeff
-        self.phi = phi
-        self.concentration_step = concentration_step
-        self.net_rxn = net_rxn
+        self._phi = phi
+        self._concentration_step = concentration_step
+        self._net_rxn = net_rxn
 
         # Calculate the forward and reverse rate constants (k)
-        self.reverse_rate_consts = self.phi / (self.keq_values + 1.0)
-        self.forward_rate_consts = self.phi - self.reverse_rate_consts
+        self._reverse_rate_consts = self._phi / (self._keq_values + 1.0)
+        self._forward_rate_consts = self._phi - self._reverse_rate_consts
 
         # Set the concentrations and calculate the forward/reverse/net rates
-        self.concentrations = np.copy(self.initial_concentrations)
-        self.forward_rates, self.reverse_rates, self.net_rates = self.calculate_rates()
+        self._concentrations = np.copy(self._initial_concentrations)
+        self._forward_rates, self._reverse_rates, self._net_rates = self.calculate_rates()
+
+    @property
+    def phi(self):
+        '''Return the phi.'''
+        return self._phi
+
+    @property
+    def concentration_step(self):
+        '''Return the amount of change in concentration.'''
+        return self._concentration_step
+
+    @property
+    def net_rxn(self):
+        ''' '''
+        return self._net_rxn
+
+    @property
+    def forward_rate_consts(self):
+        '''Return the rate constant for the forward reactions.'''
+        return self._forward_rate_consts
+
+    @property
+    def reverse_rate_consts(self):
+        '''Return the rate constant for the reverse reactions.'''
+        return self._reverse_rate_consts
+
+    @property
+    def concentrations(self):
+        '''Return the current concentration of species.'''
+        return self._concentrations
+
+    @property
+    def forward_rates(self):
+        '''Return the forward rate of reactions.'''
+        return self._forward_rates
+
+    @property
+    def reverse_rates(self):
+        '''Return the reverse rate of reactions.'''
+        return self._reverse_rates
+
+    @property
+    def net_rates(self):
+        '''Return the net rate of reactions.'''
+        return self._net_rates
 
 
     def calculate_rates(self):
@@ -94,14 +111,14 @@ class KMCSolver(object):
         '''
         forward_rates = []
         reverse_rates = []
-        for i, coeffs in enumerate(self.stoich_coeff):
+        for i, coeffs in enumerate(self._stoich_coeff):
             # calculating the forward rate of reaction i
-            forward_rate = np.array([np.power(self.concentrations[j], abs(coeff)) for j, coeff in enumerate(coeffs) if coeff < 0])
-            forward_rate = self.forward_rate_consts[i] * np.prod(forward_rate)
+            forward_rate = np.array([np.power(self._concentrations[j], abs(coeff)) for j, coeff in enumerate(coeffs) if coeff < 0])
+            forward_rate = self._forward_rate_consts[i] * np.prod(forward_rate)
             forward_rates.append(forward_rate)
             # calculating the reverse rate of reactions i
-            reverse_rate = np.array([np.power(self.concentrations[j], coeff) for j, coeff in enumerate(coeffs) if coeff > 0])
-            reverse_rate = self.reverse_rate_consts[i] * np.prod(reverse_rate)
+            reverse_rate = np.array([np.power(self._concentrations[j], coeff) for j, coeff in enumerate(coeffs) if coeff > 0])
+            reverse_rate = self._reverse_rate_consts[i] * np.prod(reverse_rate)
             reverse_rates.append(reverse_rate)
         forward_rates = np.array(forward_rates)
         reverse_rates = np.array(reverse_rates)
@@ -118,10 +135,10 @@ class KMCSolver(object):
         probaility_vector: np.ndarray
             Contains cumulative probabilities for the ith forward/reverse reaction to occur.
         '''
-        if self.net_rxn:
-            rates = abs(self.net_rates)
+        if self._net_rxn:
+            rates = abs(self._net_rates)
         else:
-            rates = np.append(self.forward_rates, self.reverse_rates)
+            rates = np.append(self._forward_rates, self._reverse_rates)
         # Cumulative sum of rates
         probability_vector = np.cumsum(rates)
         # Normalize the probability vector
@@ -158,22 +175,22 @@ class KMCSolver(object):
 
         No returns, but changes the concetrations attribute for each time it is run.
         '''
-        if self.net_rxn:
+        if self._net_rxn:
             # net reaction indexed rxn_index changes the concentrations
-            for species, coeff in enumerate(self.stoich_coeff[rxn_index]):
-                if self.net_rates[rxn_index] >= 0:
-                    self.concentrations[species] += coeff*self.concentration_step
-                elif self.net_rates[rxn_index] < 0:
-                    self.concentrations[species] -= coeff*self.concentration_step
+            for species, coeff in enumerate(self._stoich_coeff[rxn_index]):
+                if self._net_rates[rxn_index] >= 0:
+                    self._concentrations[species] += coeff*self._concentration_step
+                elif self._net_rates[rxn_index] < 0:
+                    self._concentrations[species] -= coeff*self._concentration_step
         else:
-            nforward_rxns = int(len(self.forward_rates))
+            nforward_rxns = int(len(self._forward_rates))
             if rxn_index < nforward_rxns:
                 # forward reaction indexed rxn_index changes the concentrations
-                self.concentrations += self.stoich_coeff[rxn_index] * self.concentration_step
+                self._concentrations += self._stoich_coeff[rxn_index] * self._concentration_step
 
             elif rxn_index >= nforward_rxns:
                 # reverse reaction indexed rxn_index changes the concentrations
-                self.concentrations -= self.stoich_coeff[rxn_index - nforward_rxns] * self.concentration_step
+                self._concentrations -= self._stoich_coeff[rxn_index - nforward_rxns] * self._concentration_step
 
 
     def run_simulation(self, maxiter):
@@ -190,15 +207,15 @@ class KMCSolver(object):
         i = 0
         while i < maxiter:
             # update rates
-            self.forwrd_rates, self.reverse_rates, self.net_rates = self.calculate_rates()
+            self._forwrd_rates, self._reverse_rates, self._net_rates = self.calculate_rates()
             # select the reaction to happen
             selected_index = self.select_reaction()
             # have the selected reaction change concentrations
             self.do_reaction(selected_index)
             print 'iterations:', i
-            print 'concentration:', self.concentrations
-            print 'forward rates:', self.forward_rates
-            print 'reverse rates:', self.reverse_rates
-            print 'net     rates:', self.net_rates
+            print 'concentration:', self._concentrations
+            print 'forward rates:', self._forward_rates
+            print 'reverse rates:', self._reverse_rates
+            print 'net     rates:', self._net_rates
             print
             i +=1
