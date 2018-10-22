@@ -14,14 +14,3 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
-
-
-from nice.exact import ExactSolver
-from nice.kmc import KMCSolver, NEKMCSolver
-
-
-__all__ = [
-    'ExactSolver',
-    'KMCSolver',
-    'NEKMCSolver',
-    ]
