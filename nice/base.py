@@ -110,19 +110,3 @@ class BaseSolver(object):
 
         """
         raise NotImplementedError
-
-    def compute_zeta(self):
-        """
-        Return the reaction extents (zeta values) for each reaction.
-
-        The result of this method can be fed into the ``ExactSolver`` as an
-        initial guess.
-
-        Returns
-        -------
-        zeta : np.ndarray(m)
-            Zeta values for each reaction.
-
-        """
-        diff = self._concs - self._initial_concs
-        return np.linalg.lstsq(self._stoich_coeffs.T, diff, rcond=None)[0]

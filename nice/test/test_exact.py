@@ -20,7 +20,7 @@ import numpy as np
 from numpy.testing import assert_raises, assert_allclose
 
 from nice.exact import ExactSolver
-from nice.kmc import KMCSolver
+from nice.nekmc import NEKMCSolver
 
 
 def test_raises():
@@ -57,13 +57,12 @@ def test_run():
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920])
 
 
-def test_run_kmc_guess():
+def test_run_netkmc_guess():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    ksolver = KMCSolver(initial_concs, keq_values, stoich_coeffs, conc_step=1e-4)
-    ksolver.run(maxiter=5000)
+    ksolver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs)
+    ksolver.run(step=1e-6, maxiter=50000)
     esolver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
     esolver.run(guess=ksolver.compute_zeta())
-    print('final concs', esolver.concs)
     assert_allclose(esolver.concs, [0.9261879203, 0.9623865752, 0.0926187920])

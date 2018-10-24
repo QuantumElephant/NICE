@@ -19,39 +19,19 @@
 import numpy as np
 from numpy.testing import assert_allclose
 
-from nice.kmc import KMCSolver, NEKMCSolver
+from nice.nekmc import NEKMCSolver
 
 
-def test_kmc_run():
+def test_nekmc_run():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     phi = 1
-    step = 0.0000001
-    solver = KMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi, conc_step=step)
-    assert_allclose(solver.fwd_rate_consts, [0.5, 0.0909090909])
-    assert_allclose(solver.rev_rate_consts, [0.5, 0.9090909090])
-    assert_allclose(solver.fwd_rates, [0.5, 0.0181818181])
-    assert_allclose(solver.rev_rates, [0.1, 0.3636363636])
-    step = 0.0001
-    solver = KMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi, conc_step=step)
-    solver.run(maxiter=25000)
-    print('fwd/rev final concs', solver.concs)
-
-
-def test_netkmc_run():
-    initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
-    stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    phi = 1
-    step = 0.0000001
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi, conc_step=step)
+    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi)
     assert_allclose(solver.fwd_rate_consts, [0.5, 0.0909090909])
     assert_allclose(solver.rev_rate_consts, [0.5, 0.9090909090])
     assert_allclose(solver.fwd_rates, [0.5, 0.0181818181])
     assert_allclose(solver.rev_rates, [0.1, 0.3636363636])
     assert_allclose(solver.net_rates, [0.4, -0.3454545454])
-    step = 0.0001
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi, conc_step=step)
-    solver.run(maxiter=25000)
-    print('net final concs', solver.concs)
+    solver.run(step=1e-7, maxiter=10000000)
+    assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)

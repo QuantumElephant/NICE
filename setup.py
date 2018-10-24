@@ -17,7 +17,8 @@
 
 
 from io import open
-from distutils.core import setup
+
+from numpy.distutils.core import setup, Extension
 
 
 NAME = 'NICE'
@@ -28,7 +29,7 @@ AUTHOR = 'Ayers Lab'
 
 EMAIL = 'ayers' + '@' + 'mcmaster' + '.ca'
 
-DESCRIPTION = 'Kinetic Monte Carlo and exact solvers for ' + \
+DESCRIPTION = 'Net-Event Kinetic Monte Carlo and exact solvers for ' + \
               'simultaneous equilibrium equations'
 
 VERSION = '0.0.0'
@@ -53,6 +54,11 @@ CLASSIFIERS = [
     ],
 
 
+EXT_MODULES = [
+    Extension(name='nice._nekmc', sources=['nice/_nekmc.f90']),
+    ]
+
+
 if __name__ == '__main__':
     with open('README.rst', mode='r', encoding='utf-8') as f:
         LONG_DESCRIPTION = f.read()
@@ -68,4 +74,5 @@ if __name__ == '__main__':
         requires=REQUIRES,
         packages=PACKAGES,
         classifiers=CLASSIFIERS,
+        ext_modules=EXT_MODULES,
         )

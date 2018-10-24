@@ -35,31 +35,7 @@ class ExactSolver(BaseSolver):
 
     """
 
-    def __init__(self, initial_concs, keq_values, stoich_coeffs):
-        """
-        Initialize the exact equilibrium solver.
-
-        Parameters
-        ----------
-        initial_concs : np.ndarray((n,))
-            Concentration of each species.
-            Length ``n`` specifies the number of species.
-        keq_values : np.ndarray((m,))
-            Equilibrium constant of each reaction. The order of ``keq``
-            values must correspond to the reaction order in ``stoich_coeffs``.
-            Length ``m`` specifies the number of reversible reactions.
-        stoich_coeffs : np.ndarray((m, n))
-            Stoichiometric coefficients of each species in each reaction.
-            Each row represents a reaction, and each column is a species.
-            Coefficients are negative if the species is a reactant and
-            positive if it is a product. If the species does not participate
-            in a reaction, then that coefficient is zero.
-
-        """
-        # Initialize superclass
-        super(ExactSolver, self).__init__(initial_concs, keq_values, stoich_coeffs)
-
-    def run(self, guess, maxiter=1000, tol=1e-9):
+    def run(self, guess, maxiter=1000, tol=1.0e-9):
         """
         Run the exact solver.
 
@@ -69,7 +45,7 @@ class ExactSolver(BaseSolver):
             Guess for the zeta values of each reaction.
         maxiter : int, default=1000
             Maximum number of iterations to perform.
-        tol : float, default=1e-9
+        tol : float, default=1.0e-9
             Convergence tolerance.
 
         """
