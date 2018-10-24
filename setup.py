@@ -51,7 +51,7 @@ CLASSIFIERS = [
     'Intended Audience :: Science/Research',
     'Programming Language :: Python :: 3',
     'Topic :: Science/Engineering :: Molecular Science',
-    ],
+    ]
 
 
 EXT_MODULES = [

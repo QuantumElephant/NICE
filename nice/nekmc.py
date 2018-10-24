@@ -33,6 +33,14 @@ class NEKMCSolver(BaseSolver):
     """
     Net Event Kinetic Monte Carlo simultaneous equilibrium solver class.
 
+    Run a Net-Event Kinetic Monte Carlo (NEKMC) simulation to find the
+    equilibrium concentrations for a system of simultaneous equilibria.
+
+    At every iteration, net rates of reaction are updated based on current
+    concentrations. Based on the net rates, a reaction is selected to occur,
+    where the concentrations of each involved species change by the species'
+    stoichiometric coefficient times the chosen concentration step.
+
     """
 
     def __init__(self, initial_concs, keq_values, stoich_coeffs, phi=1.0):
@@ -56,7 +64,7 @@ class NEKMCSolver(BaseSolver):
             in a reaction, then that coefficient is zero.
         phi : int, default=1.0
             Constant used for constructing the forward and reverse rate
-            constants (phi == k_{+1} + k_{-1}).
+            constants (:math:`phi = k_{+1} + k_{-1}`).
 
         """
         # Initialize superclass
@@ -148,4 +156,4 @@ class NEKMCSolver(BaseSolver):
 
         """
         diff = self._concs - self._initial_concs
-        return np.linalg.lstsq(self._stoich_coeffs.T, diff, rcond=None)[0]
+        return np.linalg.lstsq(self._stoich_coeffs.T, diff, rcond=-1)[0]

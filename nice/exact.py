@@ -33,9 +33,24 @@ class ExactSolver(BaseSolver):
     """
     Exact simultaneous equilibrium solver class.
 
+    Solve the system of equations
+
+    .. math::
+
+        K^m = \prod^N_n { {c_n}^{v^{(m)}_n} }
+
+    where
+
+    .. math::
+
+        c_n = c^{(0)}_n + \sum^M_m { v^{(m)}_n \zeta^{(m)}_n }
+
+    for reaction extents :math:`\zeta^{(m)}_n` and equilibrium
+    concentrations :math:`c_n`.
+
     """
 
-    def run(self, guess, maxiter=1000, tol=1.0e-9):
+    def run(self, guess, maxiter=1000, tol=1.0e-9, eps=1.4901e-8):
         """
         Run the exact solver.
 
@@ -47,6 +62,8 @@ class ExactSolver(BaseSolver):
             Maximum number of iterations to perform.
         tol : float, default=1.0e-9
             Convergence tolerance.
+        eps : float, default=1.4901e-8
+            Step size for finite difference derivative approximation.
 
         """
         # Handle ``guess`` argument
@@ -54,7 +71,8 @@ class ExactSolver(BaseSolver):
         if guess.shape != self.keq_values.shape:
             raise ValueError("'guess' must be of the same shape as 'keq_values'")
 	# Solve for zeta
-        zeta = fsolve(self._keq_expressions, guess, maxfev=maxiter, xtol=tol)
+        zeta = fsolve(self._keq_expressions, guess,
+                      maxfev=maxiter, xtol=tol, epsfcn=eps)
 	# Substitute back to get final concentrations
         self._concs = self._mol_expressions(zeta)
 
