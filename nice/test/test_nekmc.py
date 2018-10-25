@@ -17,17 +17,24 @@
 
 
 import numpy as np
-from numpy.testing import assert_allclose
+from numpy.testing import assert_raises, assert_allclose
 
 from nice.nekmc import NEKMCSolver
 
 
-def test_nekmc_properties():
+def test_raises():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    phi = 1
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=phi)
+    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    assert_raises(ValueError, solver.run, mode='invalid')
+
+
+def test_properties():
+    initial_concs = np.array([1.0, 0.2, 0.4])
+    keq_values = np.array([1, 0.1])
+    stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
+    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
     assert_allclose(solver.fwd_rate_consts, [0.5, 0.0909090909])
     assert_allclose(solver.rev_rate_consts, [0.5, 0.9090909090])
     assert_allclose(solver.fwd_rates, [0.5, 0.0181818181])
@@ -35,19 +42,19 @@ def test_nekmc_properties():
     assert_allclose(solver.net_rates, [0.4, -0.3454545454])
 
 
-def test_nekmc_run():
+def test_run_static():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1)
-    solver.run(step=1e-7, maxiter=10000000)
+    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    solver.run(mode='static', step=1e-7, maxiter=10000000)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
-def test_nekmc_run_dynamic():
+def test_run_dynamic():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1)
-    solver.run_dynamic(step=1e-4, inner=100, maxiter=10000000, tol=1e-9)
+    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    solver.run(mode='dynamic', step=1e-4, inner=100, maxiter=10000000, tol=1e-9)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
