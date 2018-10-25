@@ -88,7 +88,12 @@ class ExactSolver(BaseSolver):
             # Objective function is sum of residuals squared
             obj = lambda z: np.sum(self._keq_expressions(z) ** 2)
             # Solve for zeta
-            options = {'ftarget': tol, 'maxfevals': maxiter}
+            options = {
+                'ftarget': 0.0,
+                'maxfevals': maxiter,
+                'tolx': tol,
+                'verbose': -9,
+                }
             zeta = cma.fmin2(obj, guess, sigma, options=options)[0]
         else:
             raise ValueError("'mode' must be either 'newton' or 'cma'")

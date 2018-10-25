@@ -180,7 +180,7 @@ class NEKMCSolver(BaseSolver):
                 d = self._concs - c
                 # Check for decrease in step
                 if np.linalg.norm(d) < step * 10.0:
-                    step /= 10
+                    step /= 10.0
                 # Check for convergence
                 if step < tol:
                     break
