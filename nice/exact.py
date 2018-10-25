@@ -20,6 +20,7 @@ from __future__ import division
 
 import numpy as np
 from scipy.optimize import fsolve
+import cma
 
 from nice.base import BaseSolver
 
@@ -50,7 +51,7 @@ class ExactSolver(BaseSolver):
 
     """
 
-    def run(self, guess, maxiter=1000, tol=1.0e-9, eps=1.4901e-8):
+    def run(self, guess, mode='newton', maxiter=1000, tol=1.0e-9, eps=1.4901e-8, sigma=0.5):
         """
         Run the exact solver.
 
@@ -58,22 +59,40 @@ class ExactSolver(BaseSolver):
         ----------
         guess : np.ndarray(m)
             Guess for the zeta values of each reaction.
+        mode : ('newton' | 'cma')
+            Optimizer to use, either local Newton optimizer or stochastic global
+            CMA optimizer.
         maxiter : int, default=1000
             Maximum number of iterations to perform.
         tol : float, default=1.0e-9
             Convergence tolerance.
         eps : float, default=1.4901e-8
             Step size for finite difference derivative approximation.
+            Only used with ``mode='newton'``.
+        sigma : float, default=0.5
+            Initial standard deviation in each coordinate.
+            Only used with ``mode='cma'``.
 
         """
         # Handle ``guess`` argument
         guess = np.array(guess, dtype=float)
         if guess.shape != self.keq_values.shape:
             raise ValueError("'guess' must be of the same shape as 'keq_values'")
-	# Solve for zeta
-        zeta = fsolve(self._keq_expressions, guess,
-                      maxfev=maxiter, xtol=tol, epsfcn=eps)
-	# Substitute back to get final concentrations
+        # Check mode
+        mode = mode.lower()
+        if mode == 'newton':
+            # Solve for zeta
+            zeta = fsolve(self._keq_expressions, guess,
+                          maxfev=maxiter, xtol=tol, epsfcn=eps)
+        elif mode == 'cma':
+            # Objective function is sum of residuals squared
+            obj = lambda z: np.sum(self._keq_expressions(z) ** 2)
+            # Solve for zeta
+            options = {'ftarget': tol, 'maxfevals': maxiter}
+            zeta = cma.fmin2(obj, guess, sigma, options=options)[0]
+        else:
+            raise ValueError("'mode' must be either 'newton' or 'cma'")
+        # Substitute back to get final concentrations
         self._concs = self._mol_expressions(zeta)
 
     def _mol_expressions(self, zeta):
