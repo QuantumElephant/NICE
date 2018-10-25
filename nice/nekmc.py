@@ -142,6 +142,58 @@ class NEKMCSolver(BaseSolver):
                      self._fwd_rates, self._rev_rates, self._net_rates,
                      step, maxiter)
 
+    def run_dynamic(self, step=1.0e-4, inner=100, maxiter=50000, tol=1.0e-9):
+        """
+        Run the NEKMC simulation with dynamic step size.
+
+        After every ``inner`` iterations, the step size is reduced by
+
+        .. math::
+
+            \Delta_n = \Delta_{n - i} \frac{|v_n|}{|v_{n - i}|}
+
+        and stops iterating if :math:`|v_n|` does not change beyond the chosen
+        tolerance.
+
+        Parameters
+        ----------
+        step : float, default=1.0e-6
+            Step size for change in concentration at each iteration.
+        inner : int, default=100
+            Number of iterations to run before changing step size or stopping.
+        maxiter : int, default=50000
+            Number of iterations to run.
+        tol : float, default=1.0e-9
+            Consider the system converged when the norm of the net rates is less
+            than ``tol``, and stop iterating.
+
+        Returns
+        -------
+        step : float
+            Step size at end of run.
+        niter : int
+            Number of iterations run.
+
+        """
+        # Compute sum of |net rates|
+        r = np.sqrt(np.sum(np.abs(self._net_rates)))
+        # Begin iterating
+        niter = 0
+        while niter < maxiter:
+            # Run ``inner`` iterations
+            self.run(step=step, maxiter=inner)
+            # Compute new sum of |net rates|
+            s = np.sqrt(np.sum(np.abs(self._net_rates)))
+            # Check for convergence
+            if np.abs(r - s) < tol:
+                break
+            # Adjust step size
+            step *= s / r
+            # Prepare for next iteration
+            r = s
+            niter += inner
+        return step, niter
+
     def compute_zeta(self):
         """
         Return the reaction extents (zeta values) for each reaction.
