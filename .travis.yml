@@ -22,7 +22,7 @@ branches:
     - master
 
 install:
-  - pip install numpy scipy nose
+  - pip install numpy scipy cma nose
   - python setup.py build_ext --inplace
 
-script: python -m nose -sv --with-coverage --cover-package=nice
+script: python -m nose -v
