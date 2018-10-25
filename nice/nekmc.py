@@ -166,10 +166,9 @@ class NEKMCSolver(BaseSolver):
                              step, maxiter)
             niter = maxiter
         elif mode == 'dynamic':
-            # Compute sum of |net rates|
-            c = np.copy(self._concs)
             # Begin iterating
             niter = 0
+            c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
                 _nekmc.run_nekmc(nspecies, nreaction,
@@ -177,7 +176,7 @@ class NEKMCSolver(BaseSolver):
                                  self._fwd_consts, self._rev_consts,
                                  self._fwd_rates, self._rev_rates, self._net_rates,
                                  step, inner)
-                # Compute new sum of |net rates|
+                # Compute differences in concentrations
                 d = self._concs - c
                 # Check for decrease in step
                 if np.linalg.norm(d) < step * 10.0:

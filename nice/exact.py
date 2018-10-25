@@ -59,7 +59,7 @@ class ExactSolver(BaseSolver):
         ----------
         guess : np.ndarray(m)
             Guess for the zeta values of each reaction.
-        mode : ('newton' | 'cma')
+        mode : ('newton' | 'cma'), default='newton'
             Optimizer to use, either local Newton optimizer or stochastic global
             CMA optimizer.
         maxiter : int, default=1000

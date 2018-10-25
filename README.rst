@@ -9,12 +9,12 @@ equilibrium equations.
 Dependencies
 ------------
 
-The following libraries are required to build PyCI:
+The following libraries are required to build NICE:
 
 -  NumPy_ (≥1.13.0, including system headers)
 -  GFortran_ (or another Fortran compiler)
 
-The following libraries are required to run PyCI:
+The following libraries are required to run NICE:
 
 -  NumPy_ (≥1.13.0)
 -  SciPy_ (≥0.17.0)
