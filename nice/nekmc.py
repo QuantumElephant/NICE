@@ -123,75 +123,73 @@ class NEKMCSolver(BaseSolver):
         """
         return self._net_rates
 
-    def run(self, step=1.0e-6, maxiter=50000):
+    def run(self, mode='static', step=1.0e-6, maxiter=50000, inner=500, tol=1.0e-9):
         """
         Run the NEKMC simulation.
 
+        If ``mode`` is ``'dynamic'``, then after every ``inner`` iterations,
+        the step size is reduced by 10x if the norm of the change in
+        concentrations vector is within 10x the step size.
+        Iteration is stopped when the step size goes below ``tol``.
+
         Parameters
         ----------
+        mode : ('static' | 'dynamic'), default='static'
+            Whether to use a static or dynamic step size.
         step : float, default=1.0e-6
             Step size for change in concentration at each iteration.
         maxiter : int, default=50000
             Number of iterations to run.
-
-        """
-        nreaction, nspecies = self._stoich_coeffs.shape
-        _nekmc.run_nekmc(nspecies, nreaction,
-                     self._concs, self._stoich_coeffs.T,
-                     self._fwd_consts, self._rev_consts,
-                     self._fwd_rates, self._rev_rates, self._net_rates,
-                     step, maxiter)
-
-    def run_dynamic(self, step=1.0e-4, inner=100, maxiter=50000, tol=1.0e-9):
-        """
-        Run the NEKMC simulation with dynamic step size.
-
-        After every ``inner`` iterations, the step size is reduced by
-
-        .. math::
-
-            \Delta_n = \Delta_{n - i} \frac{|v_n|}{|v_{n - i}|}
-
-        and stops iterating if :math:`|v_n|` does not change beyond the chosen
-        tolerance.
-
-        Parameters
-        ----------
-        step : float, default=1.0e-6
-            Step size for change in concentration at each iteration.
-        inner : int, default=100
+        inner : int, default=500
             Number of iterations to run before changing step size or stopping.
-        maxiter : int, default=50000
-            Number of iterations to run.
+            Only used for ``mode='dynamic'``.
         tol : float, default=1.0e-9
-            Consider the system converged when the norm of the net rates is less
-            than ``tol``, and stop iterating.
+            Convergence tolerance.
+            Only used for ``mode='dynamic'``.
 
         Returns
         -------
         step : float
-            Step size at end of run.
+            Final concentration step size.
         niter : int
             Number of iterations run.
 
         """
-        # Compute sum of |net rates|
-        r = np.sqrt(np.sum(np.abs(self._net_rates)))
-        # Begin iterating
-        niter = 0
-        while niter < maxiter:
-            # Run ``inner`` iterations
-            self.run(step=step, maxiter=inner)
-            # Compute new sum of |net rates|
-            s = np.sqrt(np.sum(np.abs(self._net_rates)))
-            # Check for convergence
-            if np.abs(r - s) < tol:
-                break
-            # Adjust step size
-            step *= s / r
-            # Prepare for next iteration
-            r = s
-            niter += inner
+        nreaction, nspecies = self._stoich_coeffs.shape
+        # Check mode
+        mode = mode.lower()
+        if mode == 'static':
+            _nekmc.run_nekmc(nspecies, nreaction,
+                             self._concs, self._stoich_coeffs.T,
+                             self._fwd_consts, self._rev_consts,
+                             self._fwd_rates, self._rev_rates, self._net_rates,
+                             step, maxiter)
+            niter = maxiter
+        elif mode == 'dynamic':
+            # Compute sum of |net rates|
+            c = np.copy(self._concs)
+            # Begin iterating
+            niter = 0
+            while niter < maxiter:
+                # Run ``inner`` iterations
+                _nekmc.run_nekmc(nspecies, nreaction,
+                                 self._concs, self._stoich_coeffs.T,
+                                 self._fwd_consts, self._rev_consts,
+                                 self._fwd_rates, self._rev_rates, self._net_rates,
+                                 step, inner)
+                # Compute new sum of |net rates|
+                d = self._concs - c
+                # Check for decrease in step
+                if np.linalg.norm(d) < step * 10.0:
+                    step /= 10
+                # Check for convergence
+                if step < tol:
+                    break
+                # Prepare for next iteration
+                c = np.copy(self._concs)
+                niter += inner
+        else:
+            raise ValueError("'mode' must be either 'static' or 'dynamic'")
         return step, niter
 
     def compute_zeta(self):
