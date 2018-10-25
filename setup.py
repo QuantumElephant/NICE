@@ -39,6 +39,7 @@ URL = 'https://github.com/QuantumElephant/NICE'
 REQUIRES = [
     'numpy',
     'scipy',
+    'cma',
     ]
 
 PACKAGES = [

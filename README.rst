@@ -18,6 +18,7 @@ The following libraries are required to run PyCI:
 
 -  NumPy_ (≥1.13.0)
 -  SciPy_ (≥0.17.0)
+-  CMA-ES_ (≥2.6.0)
 -  Nosetests_ (optional: to run tests)
 
 Installation
@@ -96,6 +97,7 @@ documentation for more detailed information on running NICE.
 
 .. _NumPy: http://numpy.org/
 .. _SciPy: http://www.scipy.org/scipylib/index.html
+.. _CMA-ES: https://github.com/CMA-ES/pycma
 .. _GFortran: https://gcc.gnu.org/wiki/GFortran
 .. _Nosetests: http://nose.readthedocs.io/
 
