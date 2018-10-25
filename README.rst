@@ -103,5 +103,5 @@ documentation for more detailed information on running NICE.
    :target: https://docs.python.org/2.7/
 .. |Python 3.6| image:: http://img.shields.io/badge/python-3.6-blue.svg
    :target: https://docs.python.org/3.6/
-.. |Build Status| image:: https://travis-ci.com/msricher/NICE.svg?token=cXv5xZ8ji4xAnkUvpsev&branch=master
-   :target: https://travis-ci.com/msricher/NICE
+.. |Build Status| image:: https://travis-ci.com/QuantumElephant/NICE.svg?token=cXv5xZ8ji4xAnkUvpsev&branch=master
+   :target: https://travis-ci.com/QuantumElephant/NICE

@@ -34,7 +34,7 @@ DESCRIPTION = 'Net-Event Kinetic Monte Carlo and exact solvers for ' + \
 
 VERSION = '0.0.0'
 
-URL = 'https://github.com/quantumelephant/nice'
+URL = 'https://github.com/QuantumElephant/NICE'
 
 REQUIRES = [
     'numpy',
