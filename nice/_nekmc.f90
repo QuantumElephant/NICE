@@ -49,7 +49,7 @@ subroutine select_reaction(nrxn, n_rates, pvec, idx)
     !! Select random reaction
     t = t * rand()
     do i = 1, nrxn
-        if (pvec(idx) .gt. t) then
+        if (pvec(i) .gt. t) then
             idx = i
             return
         end if
