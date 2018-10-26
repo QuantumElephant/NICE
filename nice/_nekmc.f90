@@ -37,6 +37,7 @@ subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_ra
     !! Allocate arrays
     allocate(pvec(nrxn))
     !! Run iterations
+    call random_seed()
     do i = 1, maxiter
         call update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)
         call select_reaction(nrxn, n_rates, pvec, j)
