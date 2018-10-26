@@ -1,3 +1,21 @@
+!! Copyright (C) 2018 Ayers Lab.
+!!
+!! This file is part of NICE.
+!!
+!! NICE is free software; you can redistribute it and/or modify it under
+!! the terms of the GNU General Public License as published by the Free
+!! Software Foundation; either version 3 of the License, or (at your
+!! option) any later version.
+!!
+!! NICE is distributed in the hope that it will be useful, but WITHOUT
+!! ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+!! FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+!! for more details.
+!!
+!! You should have received a copy of the GNU General Public License
+!! along with this program; if not, see <http://www.gnu.org/licenses/>.
+
+
 !! NEKMC SUBROUTINE
 !!
 subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter)
@@ -19,7 +37,6 @@ subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_ra
     !! Allocate arrays
     allocate(pvec(nrxn))
     !! Run iterations
-    j = 0
     do i = 1, maxiter
         call update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)
         call select_reaction(nrxn, n_rates, pvec, j)
@@ -39,7 +56,7 @@ subroutine select_reaction(nrxn, n_rates, pvec, idx)
     real(kind=8), intent(inout) :: pvec(nrxn)
     !! Internal variables
     integer(kind=8) :: i
-    real(kind=8) :: t
+    real(kind=8) :: t, u
     !! Construct probability vector
     t = 0.0
     do i = 1, nrxn
@@ -47,7 +64,8 @@ subroutine select_reaction(nrxn, n_rates, pvec, idx)
         pvec(i) = t
     end do
     !! Select random reaction
-    t = t * rand()
+    call random_number(u)
+    t = t * u
     do i = 1, nrxn
         if (pvec(i) .gt. t) then
             idx = i
