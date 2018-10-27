@@ -56,7 +56,7 @@ def test_run_dynamic_1():
     keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
-    solver.run(mode='dynamic', step=1e-4, inner=100, maxiter=10000000, tol=1e-9)
+    solver.run(mode='dynamic', step=1e-4, inner=1000, maxiter=10000000, tol=1e-9)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
