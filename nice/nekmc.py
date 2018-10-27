@@ -123,7 +123,7 @@ class NEKMCSolver(BaseSolver):
         """
         return self._net_rates
 
-    def run(self, mode='static', step=1.0e-6, maxiter=50000, inner=500, tol=1.0e-9):
+    def run(self, mode='static', step=1.0e-6, maxiter=100000, inner=1000, tol=1.0e-9):
         """
         Run the NEKMC simulation.
 
