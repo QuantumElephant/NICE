@@ -60,6 +60,7 @@ MANIFEST
 pip-log.txt
 pip-delete-this-directory.txt
 .pytest_cache/
+.coverage
 
 # Documentation
 docs/html/
