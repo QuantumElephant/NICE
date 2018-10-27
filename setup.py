@@ -76,4 +76,5 @@ if __name__ == '__main__':
         packages=PACKAGES,
         classifiers=CLASSIFIERS,
         ext_modules=EXT_MODULES,
+        zip_safe=False,
         )
