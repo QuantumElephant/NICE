@@ -17,10 +17,11 @@
 
 
 from nice.exact import ExactSolver
-from nice.nekmc import NEKMCSolver
+from nice.nekmc import NEKMCSolver, KMCSolver
 
 
 __all__ = [
     'ExactSolver',
     'NEKMCSolver',
+    'KMCSolver',
     ]
