@@ -99,6 +99,95 @@ end subroutine !! do_reaction
 end subroutine !! run_nekmc
 
 
+!! KMC SUBROUTINE
+!!
+subroutine run_kmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter)
+    !f2py intent(in) nspc, nrxn, stoich, f_consts, r_consts, step, maxiter
+    !f2py intent(inout) conc, f_rates, r_rates, n_rates
+    !f2py depend(nspc) conc
+    !f2py depend(nrxn) f_consts, r_consts, f_rates, r_rates, n_rates
+    !f2py depend(nspc,nrxn) stoich
+    implicit none
+    !! Arguments
+    integer(kind=8), intent(in) :: nspc, nrxn, maxiter
+    real(kind=8), intent(in) :: stoich(nspc, nrxn), f_consts(nrxn), r_consts(nrxn), step
+    real(kind=8), intent(inout) :: conc(nspc)
+    real(kind=8), intent(out) :: f_rates(nrxn), r_rates(nrxn), n_rates(nrxn)
+    !! Working arrays
+    real(kind=8), allocatable :: pvec(:)
+    !! Internal variables
+    integer(kind=8) :: i, j, n
+    !! Allocate arrays
+    n = nrxn * 2
+    allocate(pvec(n))
+    !! Run iterations
+    call random_seed()
+    do i = 1, maxiter
+        call update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)
+        call select_reaction(nrxn, f_rates, r_rates, n, pvec, j)
+        call do_reaction(nspc, nrxn, conc, stoich, step, j)
+    end do
+    !! Deallocate work arrays
+    deallocate(pvec)
+
+contains
+
+subroutine select_reaction(nrxn, f_rates, r_rates, n, pvec, idx)
+    implicit none
+    !! Arguments
+    integer(kind=8), intent(in) :: nrxn, n
+    integer(kind=8), intent(out) :: idx
+    real(kind=8), intent(in) :: f_rates(nrxn), r_rates(nrxn)
+    real(kind=8), intent(inout) :: pvec(n)
+    !! Internal variables
+    integer(kind=8) :: i
+    real(kind=8) :: t, u
+    !! Construct probability vector
+    t = 0.0
+    do i = 1, nrxn
+        t = t + f_rates(i)
+        pvec(i) = t
+    end do
+    do i = 1, nrxn
+        t = t + r_rates(i)
+        pvec(i + nrxn) = t
+    end do
+    !! Select random reaction
+    call random_number(u)
+    t = t * u
+    do i = 1, n
+        if (pvec(i) .gt. t) then
+            idx = i
+            return
+        end if
+    end do
+    idx = n
+end subroutine !! select_reaction
+
+subroutine do_reaction(nspc, nrxn, conc, stoich, step, idx)
+    implicit none
+    !! Arguments
+    integer(kind=8), intent(in) :: nspc, nrxn, idx
+    real(kind=8), intent(in) :: stoich(nspc, nrxn), step
+    real(kind=8), intent(inout) :: conc(nspc)
+    !! Internal variables
+    integer(kind=8) :: j, k
+    !! Do reaction
+    if (idx .le. nrxn) then
+        do j = 1, nspc
+            conc(j) = conc(j) + stoich(j, idx) * step
+        end do
+    else
+        k = idx - nrxn
+        do j = 1, nspc
+            conc(j) = conc(j) - stoich(j, k) * step
+        end do
+    end if
+end subroutine !! do_reaction
+
+end subroutine !! run_kmc
+
+
 !! RATE UPDATE SUBROUTINE
 !!
 subroutine update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)

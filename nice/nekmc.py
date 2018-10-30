@@ -43,6 +43,9 @@ class NEKMCSolver(BaseSolver):
 
     """
 
+    _update_rates = staticmethod(_nekmc.update_rates)
+    _run = staticmethod(_nekmc.run_nekmc)
+
     def __init__(self, initial_concs, keq_values, stoich_coeffs, phi=1.0):
         """
         Initialize the Net Event Kinetic Monte Carlo equilibrium solver.
@@ -78,10 +81,10 @@ class NEKMCSolver(BaseSolver):
         self._net_rates = np.zeros_like(self._keq_values)
         # Compute forward/reverse/net rates
         nreaction, nspecies = self._stoich_coeffs.shape
-        _nekmc.update_rates(nspecies, nreaction,
-                          self._concs, self._stoich_coeffs.T,
-                          self._fwd_consts, self._rev_consts,
-                          self._fwd_rates, self._rev_rates, self._net_rates)
+        self._update_rates(nspecies, nreaction,
+                           self._concs, self._stoich_coeffs.T,
+                           self._fwd_consts, self._rev_consts,
+                           self._fwd_rates, self._rev_rates, self._net_rates)
 
     @property
     def fwd_rate_consts(self):
@@ -159,11 +162,11 @@ class NEKMCSolver(BaseSolver):
         # Check mode
         mode = mode.lower()
         if mode == 'static':
-            _nekmc.run_nekmc(nspecies, nreaction,
-                             self._concs, self._stoich_coeffs.T,
-                             self._fwd_consts, self._rev_consts,
-                             self._fwd_rates, self._rev_rates, self._net_rates,
-                             step, maxiter)
+            self._run(nspecies, nreaction,
+                      self._concs, self._stoich_coeffs.T,
+                      self._fwd_consts, self._rev_consts,
+                      self._fwd_rates, self._rev_rates, self._net_rates,
+                      step, maxiter)
             niter = maxiter
         elif mode == 'dynamic':
             # Begin iterating
@@ -171,11 +174,11 @@ class NEKMCSolver(BaseSolver):
             c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
-                _nekmc.run_nekmc(nspecies, nreaction,
-                                 self._concs, self._stoich_coeffs.T,
-                                 self._fwd_consts, self._rev_consts,
-                                 self._fwd_rates, self._rev_rates, self._net_rates,
-                                 step, inner)
+                self._run(nspecies, nreaction,
+                          self._concs, self._stoich_coeffs.T,
+                          self._fwd_consts, self._rev_consts,
+                          self._fwd_rates, self._rev_rates, self._net_rates,
+                          step, inner)
                 # Compute differences in concentrations
                 d = self._concs - c
                 # Check for decrease in step
@@ -206,3 +209,22 @@ class NEKMCSolver(BaseSolver):
         """
         diff = self._concs - self._initial_concs
         return np.linalg.lstsq(self._stoich_coeffs.T, diff, rcond=-1)[0]
+
+
+class KMCSolver(NEKMCSolver):
+    """
+    Kinetic Monte Carlo simultaneous equilibrium solver class.
+
+    Run a Kinetic Monte Carlo (KMC) simulation to find the equilibrium
+    concentrations for a system of simultaneous equilibria.
+
+    At every iteration, rates of reaction are updated based on current
+    concentrations. Based on the rates, a reaction is selected to occur,
+    where the concentrations of each involved species change by the
+    species' stoichiometric coefficient times the chosen concentration step.
+    Each reaction is either a forward or reverse reaction.
+
+    """
+
+    _update_rates = staticmethod(_nekmc.update_rates)
+    _run = staticmethod(_nekmc.run_kmc)
