@@ -26,6 +26,7 @@ from nice import _nekmc
 
 __all__ = [
     'NEKMCSolver',
+    'KMCSolver',
     ]
 
 
