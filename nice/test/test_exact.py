@@ -58,6 +58,15 @@ def test_run_newton():
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920])
 
 
+def test_run_bound():
+    initial_concs = np.array([1.0, 0.2, 0.4])
+    keq_values = np.array([1, 0.1])
+    stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
+    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    solver.run(guess=[0.1, -0.1], mode='bound', tol=1e-12)
+    assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
+
+
 def test_run_cma():
     initial_concs = np.array([1.0, 0.2, 0.4])
     keq_values = np.array([1, 0.1])
