@@ -19,7 +19,7 @@
 from __future__ import division
 
 import numpy as np
-from scipy.optimize import fsolve
+from scipy.optimize import fsolve, fmin_slsqp
 import cma
 
 from nice.base import BaseSolver
@@ -59,8 +59,10 @@ class ExactSolver(BaseSolver):
         ----------
         guess : np.ndarray(m)
             Guess for the zeta values of each reaction.
-        mode : ('newton' | 'cma'), default='newton'
-            Whether to use local Newton optimizer or stochastic CMA optimizer.
+        mode : ('newton' | 'bound' | 'cma'), default='newton'
+            Whether to use local Newton optimizer,
+            bounded (concs >= 0) SLSQP optimizer,
+            or stochastic CMA optimizer.
         maxiter : int, default=1000
             Maximum number of iterations to perform.
         tol : float, default=1.0e-9
@@ -83,9 +85,15 @@ class ExactSolver(BaseSolver):
             # Solve for zeta
             zeta = fsolve(self._keq_expressions, guess,
                           maxfev=maxiter, xtol=tol, epsfcn=eps)
+        elif mode == 'bound':
+            # Objective function is sum of residuals squared
+            obj = lambda z: np.sqrt(np.sum(self._keq_expressions(z) ** 2))
+            zeta = fmin_slsqp(obj, guess, disp=0,
+                              f_ieqcons=self._mol_expressions,
+                              iter=maxiter, acc=tol, epsilon=eps)
         elif mode == 'cma':
             # Objective function is sum of residuals squared
-            obj = lambda z: np.sum(self._keq_expressions(z) ** 2)
+            obj = lambda z: np.sqrt(np.sum(self._keq_expressions(z) ** 2))
             # Solve for zeta
             options = {
                 'ftarget': 0.0,
@@ -95,7 +103,7 @@ class ExactSolver(BaseSolver):
                 }
             zeta = cma.fmin2(obj, guess, sigma, options=options)[0]
         else:
-            raise ValueError("'mode' must be either 'newton' or 'cma'")
+            raise ValueError("'mode' must be either 'newton', 'bound', or 'cma'")
         # Substitute back to get final concentrations
         self._concs = self._mol_expressions(zeta)
 
