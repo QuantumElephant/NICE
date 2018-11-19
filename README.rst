@@ -68,13 +68,24 @@ We set up the NEKMC solver:
     import nice
 
     concs  = np.array([1.0, 0.2, 0.4])
-    keqs   = np.array([1.0, 0.1])
     stoich = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    nekmc  = nice.NEKMCSolver(concs, keqs, stoich)
+    keqs   = np.array([1.0, 0.1])
+    nekmc  = nice.NEKMCSolver(concs, stoich, keq_values=keqs)
 
 Each row of ``stoich`` represents a reaction. Each column is the stoichiometric
 coefficient of a species; the value is negative for a reactant, positive for a
 product, and zero if the species does not participate.
+
+It is also possible to initialize the solver by passing the forward and reverse
+rate constants directly:
+
+.. code::
+
+    concs  = np.array([1.0, 0.2, 0.4])
+    stoich = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
+    consts = np.array([[1.0, 0.1],  # forward rate constants
+                       [0.1, 1.0]]) # reverse rate constants
+    nekmc  = nice.NEKMCSolver(concs, stoich, rate_consts=consts)
 
 We run the solver with concentration step-size matching our desired precision
 for 50,000 iterations:
@@ -88,7 +99,7 @@ the NEKMC solver, to get a more precise result:
 
 .. code::
 
-    exact = nice.ExactSolver(concs, keqs, stoich)
+    exact = nice.ExactSolver(concs, stoich, keq_values=keqs)
     exact.run(guess=nekmc.compute_zeta(), tol=1e-9)
 
 Now our system is fully converged to equilibrium. Final concentrations for each

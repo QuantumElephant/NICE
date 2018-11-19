@@ -47,7 +47,7 @@ class NEKMCSolver(BaseSolver):
     _update_rates = staticmethod(_nekmc.update_rates)
     _run = staticmethod(_nekmc.run_nekmc)
 
-    def __init__(self, initial_concs, keq_values, stoich_coeffs, phi=1.0):
+    def __init__(self, initial_concs, stoich_coeffs, keq_values=None, rate_consts=None, phi=1.0):
         """
         Initialize the Net Event Kinetic Monte Carlo equilibrium solver.
 
@@ -72,36 +72,20 @@ class NEKMCSolver(BaseSolver):
 
         """
         # Initialize superclass
-        super(NEKMCSolver, self).__init__(initial_concs, keq_values, stoich_coeffs)
-        # Compute forward and reverse rate constants
-        self._rev_consts = phi / (self._keq_values + 1.0)
-        self._fwd_consts = phi - self._rev_consts
+        super(NEKMCSolver, self).__init__(initial_concs, stoich_coeffs,
+                                          keq_values=keq_values,
+                                          rate_consts=rate_consts,
+                                          phi=phi)
         # Initialize reaction rate arrays
-        self._fwd_rates = np.zeros_like(self._keq_values)
-        self._rev_rates = np.zeros_like(self._keq_values)
-        self._net_rates = np.zeros_like(self._keq_values)
+        self._fwd_rates = np.zeros_like(self._fwd_consts)
+        self._rev_rates = np.zeros_like(self._fwd_consts)
+        self._net_rates = np.zeros_like(self._fwd_consts)
         # Compute forward/reverse/net rates
         nreaction, nspecies = self._stoich_coeffs.shape
         self._update_rates(nspecies, nreaction,
                            self._concs, self._stoich_coeffs.T,
                            self._fwd_consts, self._rev_consts,
                            self._fwd_rates, self._rev_rates, self._net_rates)
-
-    @property
-    def fwd_rate_consts(self):
-        """
-        Return the rate constants for forward reactions.
-
-        """
-        return self._fwd_consts
-
-    @property
-    def rev_rate_consts(self):
-        """
-        Return the rate constants for the reverse reactions.
-
-        """
-        return self._rev_consts
 
     @property
     def fwd_rates(self):
