@@ -32,7 +32,7 @@ EMAIL = 'ayers' + '@' + 'mcmaster' + '.ca'
 DESCRIPTION = 'Net-Event Kinetic Monte Carlo and exact solvers for ' + \
               'simultaneous equilibrium equations'
 
-VERSION = '0.1.2'
+VERSION = '0.1.3'
 
 URL = 'https://github.com/QuantumElephant/NICE'
 

@@ -25,18 +25,18 @@ from nice.nekmc import NEKMCSolver
 
 def test_raises():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     assert_raises(ValueError, solver.run, guess=[1., 1., 1., 1., 1., 1.])
     assert_raises(ValueError, solver.run, guess=[1., 1.], mode='invalid')
 
 
 def test_mol_keq_expressions():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     mol_exps = solver._mol_expressions(np.array([0.45500537, -0.30738121]))
     assert_allclose(mol_exps, [0.9261879203, 0.9623865752, 0.0926187920])
     mol_exps = solver._mol_expressions(np.array([0., 0.]))
@@ -51,37 +51,37 @@ def test_mol_keq_expressions():
 
 def test_run_newton():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     solver.run(guess=[0.1, -0.1], mode='newton')
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920])
 
 
 def test_run_bound():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     solver.run(guess=[0.1, -0.1], mode='bound', tol=1e-12)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
 def test_run_cma():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     solver.run(guess=[0.0, 0.0], mode='cma', tol=1e-12)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
 def test_run_netkmc_guess():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    ksolver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs)
+    keq_values = np.array([1, 0.1])
+    ksolver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     ksolver.run(step=1e-6, maxiter=50000)
-    esolver = ExactSolver(initial_concs, keq_values, stoich_coeffs)
+    esolver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
     esolver.run(guess=ksolver.compute_zeta())
     assert_allclose(esolver.concs, [0.9261879203, 0.9623865752, 0.0926187920])

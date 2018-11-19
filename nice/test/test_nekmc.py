@@ -24,17 +24,17 @@ from nice.nekmc import NEKMCSolver
 
 def test_raises():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1, 0.1])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     assert_raises(ValueError, solver.run, mode='invalid')
 
 
 def test_properties():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1, 0.1])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     assert_allclose(solver.fwd_rate_consts, [0.5, 0.0909090909])
     assert_allclose(solver.rev_rate_consts, [0.5, 0.9090909090])
     assert_allclose(solver.fwd_rates, [0.5, 0.0181818181])
@@ -44,30 +44,30 @@ def test_properties():
 
 def test_run_static_1():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1, 0.1])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     solver.run(mode='static', step=1e-7, maxiter=10000000)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
 def test_run_dynamic_1():
     initial_concs = np.array([1.0, 0.2, 0.4])
-    keq_values = np.array([1, 0.1])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1, 0.1])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     solver.run(mode='dynamic', step=1e-4, inner=1000, maxiter=10000000, tol=1e-9)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
 def test_run_static_2():
     initial_concs = np.array([1.0, 0.1, 1e-4, 0.0, 0.0, 0.0])
-    keq_values = np.array([1e7, 1e9, 1e7, 1e9])
     stoich_coeffs = np.array([[-1, -1,  0,  1,  0,  0],
                               [ 0, -1, -1,  0,  1,  0],
                               [ 0,  0, -1, -1,  0,  1],
                               [-1,  0,  0,  0, -1,  1]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1e7, 1e9, 1e7, 1e9])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     solver.run(mode='static', step=1e-8, maxiter=50000000)
     result = [9.0e-01, 1.10212630e-08, 1.00002433e-10, 9.98999891e-02, 0.0, 9.99999e-05]
     assert_allclose(solver.concs, result, atol=1e-7, rtol=0)
@@ -75,12 +75,12 @@ def test_run_static_2():
 
 def test_run_dynamic_2():
     initial_concs = np.array([1.0, 0.1, 1e-4, 0.0, 0.0, 0.0])
-    keq_values = np.array([1e7, 1e9, 1e7, 1e9])
     stoich_coeffs = np.array([[-1, -1,  0,  1,  0,  0],
                               [ 0, -1, -1,  0,  1,  0],
                               [ 0,  0, -1, -1,  0,  1],
                               [-1,  0,  0,  0, -1,  1]])
-    solver = NEKMCSolver(initial_concs, keq_values, stoich_coeffs, phi=1.0)
+    keq_values = np.array([1e7, 1e9, 1e7, 1e9])
+    solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
     solver.run(mode='dynamic', step=1e-6, inner=1000, maxiter=10000000, tol=1e-12)
     result = [9.0e-01, 1.10212630e-08, 1.00002433e-10, 9.98999891e-02, 0.0, 9.99999e-05]
     assert_allclose(solver.concs, result, atol=1e-7, rtol=0)
