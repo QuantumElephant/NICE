@@ -18,9 +18,10 @@
 
 !! NEKMC SUBROUTINE
 !!
-subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter)
+subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter, time)
     !f2py intent(in) nspc, nrxn, stoich, f_consts, r_consts, step, maxiter
     !f2py intent(inout) conc, f_rates, r_rates, n_rates
+    !f2py intent(out) time
     !f2py depend(nspc) conc
     !f2py depend(nrxn) f_consts, r_consts, f_rates, r_rates, n_rates
     !f2py depend(nspc,nrxn) stoich
@@ -29,7 +30,7 @@ subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_ra
     integer(kind=8), intent(in) :: nspc, nrxn, maxiter
     real(kind=8), intent(in) :: stoich(nspc, nrxn), f_consts(nrxn), r_consts(nrxn), step
     real(kind=8), intent(inout) :: conc(nspc)
-    real(kind=8), intent(out) :: f_rates(nrxn), r_rates(nrxn), n_rates(nrxn)
+    real(kind=8), intent(out) :: f_rates(nrxn), r_rates(nrxn), n_rates(nrxn), time
     !! Working arrays
     real(kind=8), allocatable :: pvec(:)
     !! Internal variables
@@ -38,10 +39,11 @@ subroutine run_nekmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_ra
     allocate(pvec(nrxn))
     !! Run iterations
     call random_seed()
+    time = 0.0
     do i = 1, maxiter
         call update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)
         call select_reaction(nrxn, n_rates, pvec, j)
-        call do_reaction(nspc, nrxn, conc, stoich, n_rates, step, j)
+        call do_reaction(nspc, nrxn, conc, stoich, n_rates, step, j, time)
     end do
     !! Deallocate work arrays
     deallocate(pvec)
@@ -76,23 +78,27 @@ subroutine select_reaction(nrxn, n_rates, pvec, idx)
     idx = nrxn
 end subroutine !! select_reaction
 
-subroutine do_reaction(nspc, nrxn, conc, stoich, n_rates, step, idx)
+subroutine do_reaction(nspc, nrxn, conc, stoich, n_rates, step, idx, time)
     implicit none
     !! Arguments
     integer(kind=8), intent(in) :: nspc, nrxn, idx
     real(kind=8), intent(in) :: stoich(nspc, nrxn), n_rates(nrxn), step
-    real(kind=8), intent(inout) :: conc(nspc)
+    real(kind=8), intent(inout) :: conc(nspc), time
     !! Internal variables
     integer(kind=8) :: j
+    real(kind=8) :: r
     !! Do reaction
-    if (n_rates(idx) .ge. 0.0) then
+    r = n_rates(idx)
+    if (r .gt. 0.0) then
         do j = 1, nspc
             conc(j) = conc(j) + stoich(j, idx) * step
         end do
-    else
+        time = time + step / r
+    else if (r .lt. 0.0) then
         do j = 1, nspc
             conc(j) = conc(j) - stoich(j, idx) * step
         end do
+        time = time - step / r
     end if
 end subroutine !! do_reaction
 
@@ -101,9 +107,10 @@ end subroutine !! run_nekmc
 
 !! KMC SUBROUTINE
 !!
-subroutine run_kmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter)
+subroutine run_kmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates, step, maxiter, time)
     !f2py intent(in) nspc, nrxn, stoich, f_consts, r_consts, step, maxiter
     !f2py intent(inout) conc, f_rates, r_rates, n_rates
+    !f2py intent(out) time
     !f2py depend(nspc) conc
     !f2py depend(nrxn) f_consts, r_consts, f_rates, r_rates, n_rates
     !f2py depend(nspc,nrxn) stoich
@@ -112,7 +119,7 @@ subroutine run_kmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rate
     integer(kind=8), intent(in) :: nspc, nrxn, maxiter
     real(kind=8), intent(in) :: stoich(nspc, nrxn), f_consts(nrxn), r_consts(nrxn), step
     real(kind=8), intent(inout) :: conc(nspc)
-    real(kind=8), intent(out) :: f_rates(nrxn), r_rates(nrxn), n_rates(nrxn)
+    real(kind=8), intent(out) :: f_rates(nrxn), r_rates(nrxn), n_rates(nrxn), time
     !! Working arrays
     real(kind=8), allocatable :: pvec(:)
     !! Internal variables
@@ -122,10 +129,11 @@ subroutine run_kmc(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rate
     allocate(pvec(n))
     !! Run iterations
     call random_seed()
+    time = 0.0
     do i = 1, maxiter
         call update_rates(nspc, nrxn, conc, stoich, f_consts, r_consts, f_rates, r_rates, n_rates)
         call select_reaction(nrxn, f_rates, r_rates, n, pvec, j)
-        call do_reaction(nspc, nrxn, conc, stoich, step, j)
+        call do_reaction(nspc, nrxn, conc, stoich, f_rates, r_rates, step, j, time)
     end do
     !! Deallocate work arrays
     deallocate(pvec)
@@ -164,24 +172,33 @@ subroutine select_reaction(nrxn, f_rates, r_rates, n, pvec, idx)
     idx = n
 end subroutine !! select_reaction
 
-subroutine do_reaction(nspc, nrxn, conc, stoich, step, idx)
+subroutine do_reaction(nspc, nrxn, conc, stoich, f_rates, r_rates, step, idx, time)
     implicit none
     !! Arguments
     integer(kind=8), intent(in) :: nspc, nrxn, idx
-    real(kind=8), intent(in) :: stoich(nspc, nrxn), step
-    real(kind=8), intent(inout) :: conc(nspc)
+    real(kind=8), intent(in) :: stoich(nspc, nrxn), f_rates(nrxn), r_rates(nrxn), step
+    real(kind=8), intent(inout) :: conc(nspc), time
     !! Internal variables
     integer(kind=8) :: j, k
+    real(kind=8) :: r
     !! Do reaction
     if (idx .le. nrxn) then
-        do j = 1, nspc
-            conc(j) = conc(j) + stoich(j, idx) * step
-        end do
+        r = f_rates(idx)
+        if (r .gt. 0) then
+            do j = 1, nspc
+                conc(j) = conc(j) + stoich(j, idx) * step
+            end do
+            time = time + step / r
+        end if
     else
         k = idx - nrxn
-        do j = 1, nspc
-            conc(j) = conc(j) - stoich(j, k) * step
-        end do
+        r = r_rates(k)
+        if (r .gt. 0) then
+            do j = 1, nspc
+                conc(j) = conc(j) - stoich(j, k) * step
+            end do
+            time = time + step / r
+        end if
     end if
 end subroutine !! do_reaction
 
