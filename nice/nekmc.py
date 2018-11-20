@@ -137,6 +137,8 @@ class NEKMCSolver(BaseSolver):
 
         Returns
         -------
+        time : float
+            Reaction time elapsed.
         step : float
             Final concentration step size.
         niter : int
@@ -147,23 +149,24 @@ class NEKMCSolver(BaseSolver):
         # Check mode
         mode = mode.lower()
         if mode == 'static':
-            self._run(nspecies, nreaction,
-                      self._concs, self._stoich_coeffs.T,
-                      self._fwd_consts, self._rev_consts,
-                      self._fwd_rates, self._rev_rates, self._net_rates,
-                      step, maxiter)
+            time = self._run(nspecies, nreaction,
+                             self._concs, self._stoich_coeffs.T,
+                             self._fwd_consts, self._rev_consts,
+                             self._fwd_rates, self._rev_rates, self._net_rates,
+                             step, maxiter)[3]
             niter = maxiter
         elif mode == 'dynamic':
             # Begin iterating
+            time = 0.0
             niter = 0
             c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
-                self._run(nspecies, nreaction,
-                          self._concs, self._stoich_coeffs.T,
-                          self._fwd_consts, self._rev_consts,
-                          self._fwd_rates, self._rev_rates, self._net_rates,
-                          step, inner)
+                time += self._run(nspecies, nreaction,
+                                  self._concs, self._stoich_coeffs.T,
+                                  self._fwd_consts, self._rev_consts,
+                                  self._fwd_rates, self._rev_rates, self._net_rates,
+                                  step, inner)[3]
                 # Compute differences in concentrations
                 d = self._concs - c
                 # Check for decrease in step
@@ -177,7 +180,7 @@ class NEKMCSolver(BaseSolver):
                 niter += inner
         else:
             raise ValueError("'mode' must be either 'static' or 'dynamic'")
-        return step, niter
+        return time, step, niter
 
     def compute_zeta(self):
         """
