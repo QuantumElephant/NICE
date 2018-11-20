@@ -184,7 +184,7 @@ subroutine do_reaction(nspc, nrxn, conc, stoich, f_rates, r_rates, step, idx, ti
     !! Do reaction
     if (idx .le. nrxn) then
         r = f_rates(idx)
-        if (r .gt. 0) then
+        if (r .gt. 0.0) then
             do j = 1, nspc
                 conc(j) = conc(j) + stoich(j, idx) * step
             end do
@@ -193,7 +193,7 @@ subroutine do_reaction(nspc, nrxn, conc, stoich, f_rates, r_rates, step, idx, ti
     else
         k = idx - nrxn
         r = r_rates(k)
-        if (r .gt. 0) then
+        if (r .gt. 0.0) then
             do j = 1, nspc
                 conc(j) = conc(j) - stoich(j, k) * step
             end do
