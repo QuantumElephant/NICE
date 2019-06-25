@@ -111,7 +111,8 @@ class NEKMCSolver(BaseSolver):
         """
         return self._net_rates
 
-    def run(self, mode='static', step=1.0e-6, maxiter=100000, inner=1000, tol=1.0e-9):
+    def run(self, mode='static', step=1.0e-6, maxiter=100000, inner=1000,
+            tol=1.0e-9, eps_c=10.0, eps_s=10.0):
         """
         Run the NEKMC simulation.
 
@@ -134,6 +135,11 @@ class NEKMCSolver(BaseSolver):
         tol : float, default=1.0e-9
             Convergence tolerance.
             Only used for ``mode='dynamic'``.
+        eps_c : float, default=10.0
+            Decrease the step size when the change in concentrations vector
+            between ``inner`` iterations is less than this value.
+        eps_s : float, default=10.0
+            Divide the step size by this value when it is decreased.
 
         Returns
         -------
@@ -170,8 +176,8 @@ class NEKMCSolver(BaseSolver):
                 # Compute differences in concentrations
                 d = self._concs - c
                 # Check for decrease in step
-                if np.linalg.norm(d) < step * 10.0:
-                    step /= 10.0
+                if np.linalg.norm(d) < step * eps_c:
+                    step /= eps_s
                 # Check for convergence
                 if step < tol:
                     break
