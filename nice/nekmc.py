@@ -172,11 +172,11 @@ class NEKMCSolver(BaseSolver):
                                   self._fwd_consts, self._rev_consts,
                                   self._fwd_rates, self._rev_rates, self._net_rates,
                                   step, inner)[3]
+                time += dtime
                 # Check for time convergence
                 if dtime > tol_t:
                     break
                 # Prepare for next iteration
-                time += dtime
                 c = np.copy(self._concs)
                 niter += inner
         elif mode == 'dynamic':
@@ -191,6 +191,7 @@ class NEKMCSolver(BaseSolver):
                                   self._fwd_consts, self._rev_consts,
                                   self._fwd_rates, self._rev_rates, self._net_rates,
                                   step, inner)[3]
+                time += dtime
                 # Check for time convergence
                 if dtime > tol_t:
                     break
@@ -203,7 +204,6 @@ class NEKMCSolver(BaseSolver):
                 if np.linalg.norm(d) < step * eps_c:
                     step /= eps_s
                 # Prepare for next iteration
-                time += dtime
                 c = np.copy(self._concs)
                 niter += inner
         else:
