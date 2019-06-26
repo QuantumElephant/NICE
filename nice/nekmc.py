@@ -158,13 +158,12 @@ class NEKMCSolver(BaseSolver):
 
         """
         nreaction, nspecies = self._stoich_coeffs.shape
+        niter = 0
+        time = 0.0
         # Check mode
         mode = mode.lower()
         if mode == 'static':
             # Begin iterating
-            time = 0.0
-            niter = 0
-            c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
                 dtime = self._run(nspecies, nreaction,
@@ -177,13 +176,10 @@ class NEKMCSolver(BaseSolver):
                 if dtime > tol_t:
                     break
                 # Prepare for next iteration
-                c = np.copy(self._concs)
                 niter += inner
         elif mode == 'dynamic':
+            dconc = np.copy(self._concs)
             # Begin iterating
-            time = 0.0
-            niter = 0
-            c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
                 dtime = self._run(nspecies, nreaction,
@@ -195,16 +191,16 @@ class NEKMCSolver(BaseSolver):
                 # Check for time convergence
                 if dtime > tol_t:
                     break
-                # Check for step convergence
-                elif step < tol_s:
-                    break
                 # Compute differences in concentrations
-                d = self._concs - c
-                # Check for decrease in step
-                if np.linalg.norm(d) < step * eps_c:
+                dconc -= self._concs
+                # Check for decrease in step size
+                if np.linalg.norm(dconc) < step * eps_c:
                     step /= eps_s
+                # Check for step convergence
+                if step < tol_s:
+                    break
                 # Prepare for next iteration
-                c = np.copy(self._concs)
+                dconc[:] = self._concs
                 niter += inner
         else:
             raise ValueError("'mode' must be either 'static' or 'dynamic'")
