@@ -112,14 +112,17 @@ class NEKMCSolver(BaseSolver):
         return self._net_rates
 
     def run(self, mode='static', step=1.0e-6, maxiter=100000, inner=1000,
-            tol=1.0e-9, eps_c=10.0, eps_s=10.0):
+            tol_t=1.0e12, tol_s=1.0e-9, eps_c=10.0, eps_s=10.0):
         """
-        Run the NEKMC simulation.
+        Run the (NE)KMC simulation.
 
-        If ``mode`` is ``'dynamic'``, then after every ``inner`` iterations,
-        the step size is reduced by 10x if the norm of the change in
-        concentrations vector is within 10x the step size.
-        Iteration is stopped when the step size goes below ``tol``.
+        If ``mode`` is ``'dynamic'``, then after every ``inner`` iterations, the
+        step size is reduced by ``eps_s`` if the norm of the change in
+        concentrations vector is within ``eps_c`` times the step size.
+
+        Iteration is stopped when the step size goes below ``tol_s`` (for
+        dynamic mode), or time step size goes above ``tol_t`` (for both modes).
+        This is checked every ``inner`` iterations.
 
         Parameters
         ----------
@@ -131,15 +134,18 @@ class NEKMCSolver(BaseSolver):
             Number of iterations to run.
         inner : int, default=500
             Number of iterations to run before changing step size or stopping.
-            Only used for ``mode='dynamic'``.
-        tol : float, default=1.0e-9
-            Convergence tolerance.
+        tol_t : float, default=1.0e12
+            Time convergence tolerance.
+        tol_s : float, default=1.0e-9
+            Step convergence tolerance.
             Only used for ``mode='dynamic'``.
         eps_c : float, default=10.0
             Decrease the step size when the change in concentrations vector
             between ``inner`` iterations is less than this value.
+            Only used for ``mode='dynamic'``.
         eps_s : float, default=10.0
             Divide the step size by this value when it is decreased.
+            Only used for ``mode='dynamic'``.
 
         Returns
         -------
@@ -155,12 +161,24 @@ class NEKMCSolver(BaseSolver):
         # Check mode
         mode = mode.lower()
         if mode == 'static':
-            time = self._run(nspecies, nreaction,
-                             self._concs, self._stoich_coeffs.T,
-                             self._fwd_consts, self._rev_consts,
-                             self._fwd_rates, self._rev_rates, self._net_rates,
-                             step, maxiter)[3]
-            niter = maxiter
+            # Begin iterating
+            time = 0.0
+            niter = 0
+            c = np.copy(self._concs)
+            while niter < maxiter:
+                # Run ``inner`` iterations
+                dtime = self._run(nspecies, nreaction,
+                                  self._concs, self._stoich_coeffs.T,
+                                  self._fwd_consts, self._rev_consts,
+                                  self._fwd_rates, self._rev_rates, self._net_rates,
+                                  step, inner)[3]
+                # Check for time convergence
+                if dtime > tol_t:
+                    break
+                # Prepare for next iteration
+                time += dtime
+                c = np.copy(self._concs)
+                niter += inner
         elif mode == 'dynamic':
             # Begin iterating
             time = 0.0
@@ -168,20 +186,24 @@ class NEKMCSolver(BaseSolver):
             c = np.copy(self._concs)
             while niter < maxiter:
                 # Run ``inner`` iterations
-                time += self._run(nspecies, nreaction,
+                dtime = self._run(nspecies, nreaction,
                                   self._concs, self._stoich_coeffs.T,
                                   self._fwd_consts, self._rev_consts,
                                   self._fwd_rates, self._rev_rates, self._net_rates,
                                   step, inner)[3]
+                # Check for time convergence
+                if dtime > tol_t:
+                    break
+                # Check for step convergence
+                elif step < tol_s:
+                    break
                 # Compute differences in concentrations
                 d = self._concs - c
                 # Check for decrease in step
                 if np.linalg.norm(d) < step * eps_c:
                     step /= eps_s
-                # Check for convergence
-                if step < tol:
-                    break
                 # Prepare for next iteration
+                time += dtime
                 c = np.copy(self._concs)
                 niter += inner
         else:
