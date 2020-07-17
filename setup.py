@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Ayers Lab.
+# Copyright (C) 2020 Ayers Lab.
 #
 # This file is part of NICE.
 #
@@ -9,14 +9,11 @@
 #
 # NICE is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 # for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
-
-
-from io import open
 
 from numpy.distutils.core import setup, Extension
 
@@ -27,25 +24,19 @@ LICENSE = 'GPLv3'
 
 AUTHOR = 'Ayers Lab'
 
-EMAIL = 'ayers' + '@' + 'mcmaster' + '.ca'
+EMAIL = 'ayers@mcmaster.ca'
 
-DESCRIPTION = 'Net-Event Kinetic Monte Carlo and exact solvers for ' + \
-              'simultaneous equilibrium equations'
+DESCRIPTION = '(Net-Event) Kinetic Monte Carlo and exact solvers for simultaneous equilibria'
 
-VERSION = '0.1.3'
+LONG_DESCRIPTION = open('README.rst', mode='r', encoding='utf-8').read()
 
-URL = 'https://github.com/QuantumElephant/NICE'
+VERSION = '0.2.0'
 
-REQUIRES = [
-    'numpy',
-    'scipy',
-    'cma',
-    ]
+URL = 'http://github.com/QuantumElephant/NICE'
 
-PACKAGES = [
-    'nice',
-    'nice.test',
-    ]
+REQUIRES = ['numpy', 'scipy', 'cma']
+
+PACKAGES = ['nice', 'nice.test']
 
 CLASSIFIERS = [
     'Environment :: Console',
@@ -54,15 +45,11 @@ CLASSIFIERS = [
     'Topic :: Science/Engineering :: Molecular Science',
     ]
 
-
-EXT_MODULES = [
-    Extension(name='nice._nekmc', sources=['nice/_nekmc.f90']),
-    ]
+EXT_MODULES = [Extension(name='nice._kmc', sources=['nice/_kmc.f90'])]
 
 
 if __name__ == '__main__':
-    with open('README.rst', mode='r', encoding='utf-8') as f:
-        LONG_DESCRIPTION = f.read()
+
     setup(
         name=NAME,
         license=LICENSE,

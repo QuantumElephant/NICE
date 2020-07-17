@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Ayers Lab.
+# Copyright (C) 2020 Ayers Lab.
 #
 # This file is part of NICE.
 #
@@ -9,12 +9,11 @@
 #
 # NICE is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 # for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
-
 
 import numpy as np
 from numpy.testing import assert_raises, assert_allclose
@@ -46,7 +45,6 @@ def test_object_raises():
     rate_consts = np.array([[1, 0.1], [0.1, 1]])
     solver = BaseSolver(initial_concs, stoich_coeffs, rate_consts=rate_consts)
     assert_raises(AttributeError, lambda : solver.keq_values)
-    assert_raises(NotImplementedError, solver.run)
 
 
 def test_properties():

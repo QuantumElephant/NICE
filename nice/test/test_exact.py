@@ -1,4 +1,4 @@
-# Copyright (C) 2018 Ayers Lab.
+# Copyright (C) 2020 Ayers Lab.
 #
 # This file is part of NICE.
 #
@@ -9,18 +9,16 @@
 #
 # NICE is distributed in the hope that it will be useful, but WITHOUT
 # ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
-# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License
 # for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program; if not, see <http://www.gnu.org/licenses/>.
 
-
 import numpy as np
 from numpy.testing import assert_raises, assert_allclose
 
-from nice.exact import ExactSolver
-from nice.nekmc import NEKMCSolver
+from nice import NEKMCSolver, ExactSolver
 
 
 def test_raises():
@@ -28,8 +26,8 @@ def test_raises():
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    assert_raises(ValueError, solver.run, guess=[1., 1., 1., 1., 1., 1.])
-    assert_raises(ValueError, solver.run, guess=[1., 1.], mode='invalid')
+    assert_raises(ValueError, solver.optimize, guess=[1., 1., 1., 1., 1., 1.])
+    assert_raises(ValueError, solver.optimize, guess=[1., 1.], mode='invalid')
 
 
 def test_mol_keq_expressions():
@@ -49,39 +47,39 @@ def test_mol_keq_expressions():
     assert_allclose(keq_exps, [0.0, 0.0], rtol=0, atol=1e-8)
 
 
-def test_run_newton():
+def test_optimize_newton():
     initial_concs = np.array([1.0, 0.2, 0.4])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    solver.run(guess=[0.1, -0.1], mode='newton')
+    solver.optimize(guess=[0.1, -0.1], mode='newton')
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920])
 
 
-def test_run_bound():
+def test_optimize_bound():
     initial_concs = np.array([1.0, 0.2, 0.4])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    solver.run(guess=[0.1, -0.1], mode='bound', tol=1e-12)
+    solver.optimize(guess=[0.1, -0.1], mode='bound', tol=1e-12)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
-def test_run_cma():
+def test_optimize_cma():
     initial_concs = np.array([1.0, 0.2, 0.4])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    solver.run(guess=[0.0, 0.0], mode='cma', tol=1e-12)
+    solver.optimize(guess=[0.0, 0.0], mode='cma', tol=1e-12)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
-def test_run_netkmc_guess():
+def test_optimize_netkmc_guess():
     initial_concs = np.array([1.0, 0.2, 0.4])
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     ksolver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    ksolver.run(step=1e-6, maxiter=50000)
+    ksolver.iterate(step=1e-6, niter=50000)
     esolver = ExactSolver(initial_concs, stoich_coeffs, keq_values=keq_values)
-    esolver.run(guess=ksolver.compute_zeta())
+    esolver.optimize(guess=ksolver.compute_zeta())
     assert_allclose(esolver.concs, [0.9261879203, 0.9623865752, 0.0926187920])
