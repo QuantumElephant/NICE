@@ -32,7 +32,7 @@ class BaseSolver:
     @property
     def nreaction(self) -> int:
         r"""
-        The number of reactions for this system.
+        Number of reactions for this system.
 
         """
         return self._stoich_coeffs.shape[0]
@@ -40,7 +40,7 @@ class BaseSolver:
     @property
     def nspecies(self) -> int:
         r"""
-        The number of species for this system.
+        Number of species for this system.
 
         """
         return self._stoich_coeffs.shape[1]
@@ -48,7 +48,7 @@ class BaseSolver:
     @property
     def initial_concs(self) -> np.ndarray:
         r"""
-        The initial concentration of species.
+        Initial concentration of species.
 
         """
         return self._initial_concs
@@ -56,7 +56,7 @@ class BaseSolver:
     @property
     def stoich_coeffs(self) -> np.ndarray:
         r"""
-        The stoichiometric coefficient of species in reactions.
+        Stoichiometric coefficient of species in reactions.
 
         """
         return self._stoich_coeffs
@@ -64,7 +64,7 @@ class BaseSolver:
     @property
     def concs(self) -> np.ndarray:
         r"""
-        The concentrations of species.
+        Concentrations of species.
 
         """
         return self._concs
@@ -72,7 +72,7 @@ class BaseSolver:
     @property
     def keq_values(self) -> np.ndarray:
         r"""
-        The equilibrium constant of reactions.
+        Equilibrium constant of reactions.
 
         """
         if self._keq_values is None:
@@ -82,7 +82,7 @@ class BaseSolver:
     @property
     def fwd_rate_consts(self) -> np.ndarray:
         r"""
-        The rate constants for forward reactions.
+        Rate constants for forward reactions.
 
         """
         return self._fwd_consts
@@ -90,7 +90,7 @@ class BaseSolver:
     @property
     def rev_rate_consts(self) -> np.ndarray:
         r"""
-        The rate constants for the reverse reactions.
+        Rate constants for the reverse reactions.
 
         """
         return self._rev_consts
@@ -164,3 +164,21 @@ class BaseSolver:
         else:
             self._rev_consts = phi / (self._keq_values + 1)
             self._fwd_consts = phi - self._rev_consts
+
+    def compute_zeta(self) -> np.ndarray:
+        r"""
+        Return the reaction extents (zeta values) for each reaction.
+
+        The result of this method can be fed into ``ExactSolver.optimize`` as an initial guess.
+
+        Returns
+        -------
+        zeta : np.ndarray(m)
+            Zeta values for each reaction.
+
+        """
+        return np.linalg.lstsq(
+            self._stoich_coeffs.transpose(),
+            self._concs - self._initial_concs,
+            rcond=-1,
+            )[0]

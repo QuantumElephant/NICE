@@ -91,3 +91,6 @@ tags
 .spyderproject
 .spyproject
 .vscode/
+
+# Documentation
+doc/build/

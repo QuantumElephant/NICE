@@ -1,2 +1,6 @@
 include README.rst
 include LICENSE
+
+include doc/Makefile
+include doc/source/conf.py
+include doc/source/*.rst

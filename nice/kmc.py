@@ -20,7 +20,7 @@ from typing import Tuple
 import numpy as np
 
 from nice.base import BaseSolver
-from nice import _kmc
+from nice._kmc import run_kmc, run_nekmc, update_rates
 
 
 __all__ = [
@@ -38,7 +38,7 @@ class BaseKMCSolver(BaseSolver):
     @property
     def fwd_rates(self) -> np.ndarray:
         r"""
-        The forward rates of reaction.
+        Forward rates of reaction.
 
         """
         return self._fwd_rates
@@ -46,7 +46,7 @@ class BaseKMCSolver(BaseSolver):
     @property
     def rev_rates(self) -> np.ndarray:
         r"""
-        The reverse rates of reaction.
+        Reverse rates of reaction.
 
         """
         return self._rev_rates
@@ -54,7 +54,7 @@ class BaseKMCSolver(BaseSolver):
     @property
     def net_rates(self) -> np.ndarray:
         r"""
-        The net rates of reaction.
+        Net rates of reaction.
 
         """
         return self._net_rates
@@ -62,7 +62,7 @@ class BaseKMCSolver(BaseSolver):
     @property
     def time(self) -> float:
         r"""
-        The current time elapsed over past iterations.
+        Current time elapsed over past iterations.
 
         """
         return self._time
@@ -100,21 +100,24 @@ class BaseKMCSolver(BaseSolver):
         # Initialize base class
         BaseSolver.__init__(self, initial_concs, stoich_coeffs, keq_values=keq_values,
             rate_consts=rate_consts, phi=phi)
+
         # Initialize reaction rate arrays
         self._fwd_rates = np.zeros_like(self._fwd_consts)
         self._rev_rates = np.zeros_like(self._fwd_consts)
         self._net_rates = np.zeros_like(self._fwd_consts)
+
         # Compute forward/reverse/net rates
-        _kmc.update_rates(
+        update_rates(
             self.nspecies, self.nreaction,
             self._concs, self._stoich_coeffs.transpose(),
             self._fwd_consts, self._rev_consts,
             self._fwd_rates, self._rev_rates, self._net_rates,
             )
+
         # Set other persistent KMC attributes
         self._time = 0.0
 
-    def iterate(self, step: float = 1.0e-6, niter: int = 1000):
+    def iterate(self, step: float = 1.0e-6, niter: int = 1000) -> None:
         r"""
         Run some iterations of the KMC simulation.
 
@@ -126,7 +129,7 @@ class BaseKMCSolver(BaseSolver):
             Number of iterations to run.
 
         """
-        self._time += self._run(
+        self._time += self._iterate(
             self.nspecies, self.nreaction,
             self._concs, self._stoich_coeffs.transpose(),
             self._fwd_consts, self._rev_consts,
@@ -134,8 +137,8 @@ class BaseKMCSolver(BaseSolver):
             step, niter,
             )[3]
 
-    def run_simulation(self, mode: str = 'static', maxiter: int = 1000, niter: int = 1000,
-            step: float = 1.0e-6, tol_t: float = 1.0e12, tol_s: float = 1.0e-9,
+    def run_simulation(self, mode: str = 'static', step: float = 1.0e-6, niter: int = 1000,
+            maxcall: int = 1000, tol_t: float = 1.0e12, tol_s: float = 1.0e-9,
             eps_c: float = 10.0, eps_s: float = 10.0) -> Tuple[int, float]:
         r"""
         Run the entire KMC simulation.
@@ -152,12 +155,12 @@ class BaseKMCSolver(BaseSolver):
         ----------
         mode : ('static' | 'dynamic'), default='static'
             Whether to use a static or dynamic step size.
-        maxiter : int, default=50000
-            Number of times to call ``self.iterate`` method.
-        niter : int, default=500
-            Number of iterations to run before changing step size or stopping.
         step : float, default=1.0e-6
             Step size for change in concentration at each iteration.
+        niter : int, default=500
+            Number of iterations to run before changing step size or stopping.
+        maxcall : int, default=50000
+            Number of times to call ``self.iterate`` method.
         tol_t : float, default=1.0e12
             Time convergence tolerance.
         tol_s : float, default=1.0e-9
@@ -171,31 +174,30 @@ class BaseKMCSolver(BaseSolver):
 
         Returns
         -------
-        niter : int
-            Number of iterations run.
+        ncall : int
+            Number of times ``self.iterate`` was called.
         step : float
             Final concentration step size.
 
         """
-        # Check mode
+        ncall = 0
         if mode == 'static':
-            n = 0
-            while n < maxiter:
+            while ncall < maxcall:
                 # Run ``niter`` iterations
                 prev_time = self._time
                 self.iterate(step=step, niter=niter)
-                n += 1
+                ncall += 1
                 # Check for time convergence
                 if self._time - prev_time > tol_t:
                     break
+
         elif mode == 'dynamic':
-            n = 0
             dconc = np.copy(self._concs)
-            while n < maxiter:
+            while ncall < maxcall:
                 # Run ``niter`` iterations
                 prev_time = self._time
                 self.iterate(step=step, niter=niter)
-                n += 1
+                ncall += 1
                 # Check for time convergence
                 if self._time - prev_time > tol_t:
                     break
@@ -210,25 +212,8 @@ class BaseKMCSolver(BaseSolver):
                 dconc[:] = self._concs
         else:
             raise ValueError("'mode' must be either 'static' or 'dynamic'")
-        return n, step
 
-    def compute_zeta(self) -> np.ndarray:
-        r"""
-        Return the reaction extents (zeta values) for each reaction.
-
-        The result of this method can be fed into ``ExactSolver.optimize`` as an initial guess.
-
-        Returns
-        -------
-        zeta : np.ndarray(m)
-            Zeta values for each reaction.
-
-        """
-        return np.linalg.lstsq(
-            self._stoich_coeffs.transpose(),
-            self._concs - self._initial_concs,
-            rcond=-1,
-            )[0]
+        return ncall, step
 
 
 class KMCSolver(BaseKMCSolver):
@@ -244,7 +229,7 @@ class KMCSolver(BaseKMCSolver):
     either a forward or reverse reaction.
 
     """
-    _run = staticmethod(_kmc.run_kmc)
+    _iterate = staticmethod(run_kmc)
 
 
 class NEKMCSolver(BaseKMCSolver):
@@ -259,4 +244,4 @@ class NEKMCSolver(BaseKMCSolver):
     species change by the species' stoichiometric coefficient times the chosen concentration step.
 
     """
-    _run = staticmethod(_kmc.run_nekmc)
+    _iterate = staticmethod(run_nekmc)

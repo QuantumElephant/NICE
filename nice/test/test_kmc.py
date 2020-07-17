@@ -46,7 +46,7 @@ def test_run_static_1():
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
-    solver.run_simulation(mode='static', step=1e-7, maxiter=10000)
+    solver.run_simulation(mode='static', step=1e-7, maxcall=10000)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
@@ -55,7 +55,7 @@ def test_run_dynamic_1():
     stoich_coeffs = np.array([[-0.5, 1.0, 0.0], [-0.5, -1.0, 1.0]])
     keq_values = np.array([1, 0.1])
     solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
-    solver.run_simulation(mode='dynamic', step=1e-4, niter=1000, maxiter=10000, tol_s=1e-9)
+    solver.run_simulation(mode='dynamic', step=1e-4, niter=1000, maxcall=10000, tol_s=1e-9)
     assert_allclose(solver.concs, [0.9261879203, 0.9623865752, 0.0926187920], rtol=1e-5)
 
 
@@ -67,7 +67,7 @@ def test_run_static_2():
                               [-1,  0,  0,  0, -1,  1]])
     keq_values = np.array([1e7, 1e9, 1e7, 1e9])
     solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
-    solver.run_simulation(mode='static', step=1e-8, maxiter=50000)
+    solver.run_simulation(mode='static', step=1e-8, maxcall=50000)
     result = [9.0e-01, 1.10212630e-08, 1.00002433e-10, 9.98999891e-02, 0.0, 9.99999e-05]
     assert_allclose(solver.concs, result, atol=1e-7, rtol=0)
 
@@ -80,6 +80,6 @@ def test_run_dynamic_2():
                               [-1,  0,  0,  0, -1,  1]])
     keq_values = np.array([1e7, 1e9, 1e7, 1e9])
     solver = NEKMCSolver(initial_concs, stoich_coeffs, keq_values=keq_values, phi=1.0)
-    solver.run_simulation(mode='dynamic', step=1e-6, niter=1000, maxiter=10000, tol_s=1e-12)
+    solver.run_simulation(mode='dynamic', step=1e-6, niter=1000, maxcall=10000, tol_s=1e-12)
     result = [9.0e-01, 1.10212630e-08, 1.00002433e-10, 9.98999891e-02, 0.0, 9.99999e-05]
     assert_allclose(solver.concs, result, atol=1e-7, rtol=0)
