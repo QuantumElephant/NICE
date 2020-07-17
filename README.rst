@@ -16,7 +16,7 @@
     : You should have received a copy of the GNU General Public License
     : along with this program; if not, see <http://www.gnu.org/licenses/>.
 
-|Python 3.8| |Build Status|
+|Python 3.8|
 
 NICE
 ====
@@ -151,5 +151,3 @@ running NICE.
 
 .. |Python 3.8| image:: http://img.shields.io/badge/python-3.8-blue.svg
    :target: http://docs.python.org/3.8/
-.. |Build Status| image:: http://travis-ci.com/QuantumElephant/NICE.svg?token=cXv5xZ8ji4xAnkUvpsev&branch=master
-   :target: http://travis-ci.com/QuantumElephant/NICE
