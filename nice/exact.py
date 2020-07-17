@@ -71,7 +71,7 @@ class ExactSolver(BaseSolver):
 
         """
         # Handle ``guess`` argument
-        guess = np.asarray(guess, dtype=np.float64)
+        guess = np.asarray(guess, dtype=np.double)
         if guess.shape != self.keq_values.shape:
             raise ValueError("'guess' must be of the same shape as 'keq_values'")
 

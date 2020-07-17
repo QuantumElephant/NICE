@@ -129,21 +129,21 @@ class BaseSolver:
         if keq_values is None:
             if rate_consts is None:
                 raise ValueError("One of ('keq_values', 'rate_consts') must be passed as input")
-            rate_consts = np.array(rate_consts, dtype=np.float64)
+            rate_consts = np.array(rate_consts, dtype=np.double)
             if rate_consts.ndim != 2:
                 raise ValueError("'rate_consts' must be a 2D array")
             nreaction = rate_consts.shape[1]
         else:
             if rate_consts is not None:
                 raise ValueError("Cannot set from both ('keq_values', 'rate_consts')")
-            keq_values = np.array(keq_values, dtype=np.float64)
+            keq_values = np.array(keq_values, dtype=np.double)
             if keq_values.ndim != 1:
                 raise ValueError("'keq_values' must be a 1D array")
             nreaction = keq_values.shape[0]
 
         # Check system arrays
-        initial_concs = np.array(initial_concs, dtype=np.float64)
-        stoich_coeffs = np.array(stoich_coeffs, dtype=np.float64)
+        initial_concs = np.array(initial_concs, dtype=np.double)
+        stoich_coeffs = np.array(stoich_coeffs, dtype=np.double)
         if initial_concs.ndim != 1:
             raise ValueError("'initial_concs' must be a 1D array")
         if stoich_coeffs.ndim != 2:
