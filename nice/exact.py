@@ -72,8 +72,8 @@ class ExactSolver(BaseSolver):
         """
         # Handle ``guess`` argument
         guess = np.asarray(guess, dtype=np.double)
-        if guess.shape != self.keq_values.shape:
-            raise ValueError("'guess' must be of the same shape as 'keq_values'")
+        if guess.ndim != 1 or guess.size != self.nreaction:
+            raise ValueError("'guess' shape must match (nreaction,)")
 
         # Run optimizer
         if mode == 'newton':
