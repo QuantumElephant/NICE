@@ -40,6 +40,11 @@ class BaseKMCSolver(BaseSolver):
         r"""
         Forward rates of reaction.
 
+        Returns
+        -------
+        fwd_rates : np.ndarray((m,))
+            Forward rates of reaction.
+
         """
         return self._fwd_rates
 
@@ -47,6 +52,11 @@ class BaseKMCSolver(BaseSolver):
     def rev_rates(self) -> np.ndarray:
         r"""
         Reverse rates of reaction.
+
+        Returns
+        -------
+        rev_rates : np.ndarray((m,))
+            Reverse rates of reaction.
 
         """
         return self._rev_rates
@@ -56,6 +66,11 @@ class BaseKMCSolver(BaseSolver):
         r"""
         Net rates of reaction.
 
+        Returns
+        -------
+        net_rates : np.ndarray((m,))
+            Net rates of reaction.
+
         """
         return self._net_rates
 
@@ -63,6 +78,11 @@ class BaseKMCSolver(BaseSolver):
     def time(self) -> float:
         r"""
         Current time elapsed over past iterations.
+
+        Returns
+        -------
+        time : float
+            Current time elapsed over past iterations.
 
         """
         return self._time
@@ -157,9 +177,9 @@ class BaseKMCSolver(BaseSolver):
             Whether to use a static or dynamic step size.
         step : float, default=1.0e-6
             Step size for change in concentration at each iteration.
-        niter : int, default=500
+        niter : int, default=1000
             Number of iterations to run before changing step size or stopping.
-        maxcall : int, default=50000
+        maxcall : int, default=1000
             Number of times to call ``self.iterate`` method.
         tol_t : float, default=1.0e12
             Time convergence tolerance.

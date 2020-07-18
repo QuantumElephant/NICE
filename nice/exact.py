@@ -54,7 +54,7 @@ class ExactSolver(BaseSolver):
 
         Parameters
         ----------
-        guess : np.ndarray(m)
+        guess : np.ndarray((m,))
             Guess for the zeta values of each reaction.
         mode : ('newton' | 'bound' | 'cma'), default='newton'
             Whether to use local Newton optimizer, bounded (concs >= 0) SLSQP optimizer,
@@ -111,12 +111,12 @@ class ExactSolver(BaseSolver):
 
         Parameters
         ----------
-        zeta : np.ndarray(m)
+        zeta : np.ndarray((m,))
             Reaction extents for each reaction.
 
         Returns
         -------
-        mol_exps : np.ndarray(m)
+        mol_exps : np.ndarray((m,))
             Expressions for the final concentration of each species.
 
         """
@@ -131,12 +131,12 @@ class ExactSolver(BaseSolver):
 
         Parameters
         ----------
-        zeta : np.ndarray(m)
+        zeta : np.ndarray((m,))
             Reaction extents for each reaction.
 
         Returns
         -------
-        keq_exps : np.ndarray(m)
+        keq_exps : np.ndarray((m,))
             Expressions for the ``keq`` values in terms of final concentrations.
 
         """

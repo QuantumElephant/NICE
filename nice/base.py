@@ -34,6 +34,11 @@ class BaseSolver:
         r"""
         Number of reactions for this system.
 
+        Returns
+        -------
+        nreaction : int
+            Number of reactions for this system.
+
         """
         return self._stoich_coeffs.shape[0]
 
@@ -41,6 +46,11 @@ class BaseSolver:
     def nspecies(self) -> int:
         r"""
         Number of species for this system.
+
+        Returns
+        -------
+        nspecies : int
+            Number of species for this system.
 
         """
         return self._stoich_coeffs.shape[1]
@@ -50,6 +60,11 @@ class BaseSolver:
         r"""
         Initial concentration of species.
 
+        Returns
+        -------
+        initial_concs : np.ndarray((n,))
+            Initial concentration of species.
+
         """
         return self._initial_concs
 
@@ -57,6 +72,11 @@ class BaseSolver:
     def stoich_coeffs(self) -> np.ndarray:
         r"""
         Stoichiometric coefficient of species in reactions.
+
+        Returns
+        -------
+        stoich_coeffs : np.ndarray((m, n))
+            Stoichiometric coefficient of species in reactions.
 
         """
         return self._stoich_coeffs
@@ -66,6 +86,11 @@ class BaseSolver:
         r"""
         Concentrations of species.
 
+        Returns
+        -------
+        concs : np.ndarray((n,))
+            Concentrations of species.
+
         """
         return self._concs
 
@@ -73,6 +98,11 @@ class BaseSolver:
     def keq_values(self) -> np.ndarray:
         r"""
         Equilibrium constant of reactions.
+
+        Returns
+        -------
+        keq_values : np.ndarray((m,))
+            Equilibrium constant of reactions.
 
         """
         if self._keq_values is None:
@@ -84,6 +114,11 @@ class BaseSolver:
         r"""
         Rate constants for forward reactions.
 
+        Returns
+        -------
+        fwd_rate_consts : np.ndarray((m,))
+            Rate constants for forward reactions.
+
         """
         return self._fwd_consts
 
@@ -91,6 +126,11 @@ class BaseSolver:
     def rev_rate_consts(self) -> np.ndarray:
         r"""
         Rate constants for the reverse reactions.
+
+        Returns
+        -------
+        rev_rate_consts : np.ndarray((m,))
+            Rate constants for the reverse reactions.
 
         """
         return self._rev_consts
@@ -173,7 +213,7 @@ class BaseSolver:
 
         Returns
         -------
-        zeta : np.ndarray(m)
+        zeta : np.ndarray((m,))
             Zeta values for each reaction.
 
         """
