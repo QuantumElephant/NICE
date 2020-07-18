@@ -121,9 +121,7 @@ class ExactSolver(BaseSolver):
 
         """
         # Compute conc_n = (init_conc)_n + sum_m { C_mn zeta_m }
-        mol_exps = np.empty_like(self._initial_concs)
-        for species, coeffs in enumerate(self._stoich_coeffs.transpose()):
-            mol_exps[species] = np.sum(coeffs * zeta)
+        mol_exps = np.sum(self._stoich_coeffs.transpose() * zeta, axis=1)
         mol_exps += self._initial_concs
         return mol_exps
 
@@ -143,9 +141,6 @@ class ExactSolver(BaseSolver):
 
         """
         # Compute keq_m = prod_n { (conc_n)^(C_mn) }
-        mol_exps = self._mol_expressions(zeta)
-        keq_exps = np.empty_like(self._keq_values)
-        for rxn, coeffs in enumerate(self._stoich_coeffs):
-            keq_exps[rxn] = np.prod(np.power(mol_exps, coeffs))
+        keq_exps = np.prod(np.power(self._mol_expressions(zeta), self._stoich_coeffs), axis=1)
         keq_exps -= self._keq_values
         return keq_exps
