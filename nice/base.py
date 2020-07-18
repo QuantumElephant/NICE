@@ -130,8 +130,8 @@ class BaseSolver:
             if rate_consts is None:
                 raise ValueError("One of ('keq_values', 'rate_consts') must be passed as input")
             rate_consts = np.array(rate_consts, dtype=np.double)
-            if rate_consts.ndim != 2:
-                raise ValueError("'rate_consts' must be a 2D array")
+            if rate_consts.ndim != 2 or rate_consts.shape[0] != 2:
+                raise ValueError("'rate_consts' must be a 2D array with two rows")
             nreaction = rate_consts.shape[1]
         else:
             if rate_consts is not None:
