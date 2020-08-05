@@ -223,7 +223,7 @@ class BaseKMCSolver(BaseSolver):
                     break
                 # Check for decrease in step size
                 dconc -= self._concs
-                if np.sqrt(np.dot(dconc, dconc)) < step * eps_c:
+                if np.max(np.abs(dconc)) < step * eps_c:
                     step /= eps_s
                 # Check for step convergence
                 if step < tol_s:
