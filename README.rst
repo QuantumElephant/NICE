@@ -111,7 +111,9 @@ We set up the NEKMC solver:
 
 Each row of ``stoich`` represents a reaction. Each column is the stoichiometric coefficient of a
 species; the value is negative for a reactant, positive for a product, and zero if the species does
-not participate.
+not participate. Be careful, as the equilibrium constants depend on the stoichiometry you select. I.e., 
+    1 A + 2 B  <-->  2 C    K_eq = 0.1
+  0.5 A +   B  <-->    C    K_eq = (0.1)^{1/2} = 0.32
 
 It is also possible to initialize the solver by passing the forward and reverse rate constants
 directly:
